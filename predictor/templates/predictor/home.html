@@ -1,0 +1,48 @@
+{% extends "predictor/base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Classification binaire · cible <code>income</code></p>
+  <h1>Ce profil gagne-t-il<br>plus de <em>50 000&nbsp;$</em> par an&nbsp;?</h1>
+  <p class="lead">Un modèle de <strong>Gradient Boosting</strong>, entraîné sur le recensement américain (dataset Adult), estime la probabilité qu'un profil socio-professionnel dépasse 50 000&nbsp;$ de revenu annuel.</p>
+  <a class="btn" href="{% url 'income' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>45&nbsp;175</b><span>profils après nettoyage</span></div>
+  <div><b>{{ metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
+  <div><b>{{ metrics.auc_pr }}</b><span>AUC-PR (test)</span></div>
+  <div><b>12</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Comment ça marche</h2>
+  <ol>
+    <li><b>Vous remplissez</b> le profil (âge, études, profession…).</li>
+    <li><b>Le serveur Django</b> envoie ces valeurs au pipeline <code>pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie une probabilité, comparée au seuil optimisé.</li>
+  </ol>
+</section>
+
+<section class="hero occupation-hero">
+  <p class="eyebrow">Classification à 3 classes · cible <code>occupation</code></p>
+  <h1>À quelle <em>famille</em> de métiers<br>appartient ce profil&nbsp;?</h1>
+  <p class="lead">Un <strong>Hist Gradient Boosting</strong> ne vise pas l'intitulé exact du métier. Il estime la famille la plus probable&nbsp;: <strong>col blanc</strong> (bureau, direction, vente), <strong>col bleu</strong> (métiers manuels) ou <strong>services</strong> (restauration, sécurité, domestique).</p>
+  <a class="btn" href="{% url 'occupation' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>{{ occupation.rows }}</b><span>profils après nettoyage</span></div>
+  <div><b>{{ occupation.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
+  <div><b>{{ occupation.metrics.macro_f1 }}</b><span>Macro F1 (test)</span></div>
+  <div><b>12</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Profession : comment ça marche</h2>
+  <ol>
+    <li><b>Vous décrivez</b> le profil, y compris la tranche de revenu.</li>
+    <li><b>Le serveur Django</b> prépare les variables et appelle le pipeline <code>pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie la famille la plus probable, avec les trois probabilités.</li>
+  </ol>
+</section>
+{% endblock %}

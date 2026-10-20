@@ -1,0 +1,87 @@
+{% extends "predictor/base.html" %}
+{% block title %}Diplômé sous-évalué · Atelier ML{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<h1 class="page-title">Diplômé <em>sous-évalué</em>&nbsp;?</h1>
+<p class="lead small">Le modèle concerne uniquement les <strong>diplômés</strong> (Licence ou plus). Un diplômé est dit <strong>sous-évalué</strong> lorsque son revenu annuel reste inférieur ou égal à 50&nbsp;000&nbsp;$. Le niveau d'études et le revenu définissent la cible&nbsp;: ils ne font donc pas partie du formulaire.</p>
+
+<section class="stats compact">
+  <div><b>{{ config.rows }}</b><span>diplômés dans le dataset</span></div>
+  <div><b>{% widthratio config.rate 1 100 %}&nbsp;%</b><span>sont sous-évalués</span></div>
+  <div><b>{{ config.metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
+  <div><b>{{ config.metrics.f1 }}</b><span>F1 (test)</span></div>
+</section>
+
+<div class="grid">
+  <form id="sous-evalue-form" class="card" novalidate>
+    {% csrf_token %}
+    <h2>Profil du diplômé</h2>
+    <div class="fields">
+      {% for field in form %}
+      <label class="field">
+        <span>{{ field.label }}</span>
+        {{ field }}
+        <small class="err" data-err="{{ field.name }}"></small>
+      </label>
+      {% endfor %}
+    </div>
+    <button id="submit" class="btn" type="submit">Lancer l'analyse →</button>
+  </form>
+
+  <aside class="card result" id="result" aria-live="polite">
+    <h2>Résultat</h2>
+    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
+    <div id="output" hidden>
+      <div class="badge" id="badge"></div>
+      <div class="gauge"><div class="bar" id="bar"></div><div class="mark" id="mark"></div></div>
+      <div class="gauge-legend"><span>0 %</span><span id="thr"></span><span>100 %</span></div>
+      <p id="sentence" class="sentence"></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById("sous-evalue-form");
+const $ = id => document.getElementById(id);
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  try {
+    const res = await fetch("{% url 'sous_evalue_api' %}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json",
+                "X-CSRFToken": payload.csrfmiddlewaretoken},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      for (const [name, errs] of Object.entries(data.errors)) {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (el) el.textContent = errs[0].message;
+      }
+      return;
+    }
+    show(data);
+  } catch (err) {
+    alert("Erreur de connexion au serveur.");
+  } finally {
+    $("submit").disabled = false; $("submit").textContent = "Lancer l'analyse →";
+  }
+});
+
+function show(d) {
+  $("placeholder").hidden = true; $("output").hidden = false;
+  // sous-évalué = résultat défavorable (couleur d'alerte), bien payé = couleur principale
+  $("output").className = d.under ? "low" : "high";
+  $("badge").textContent = d.under ? "Sous-évalué (≤ 50 000 $)" : "Bien payé (> 50 000 $)";
+  $("bar").style.width = d.probability + "%";
+  $("mark").style.left = d.threshold + "%";
+  $("thr").textContent = "seuil " + d.threshold + " %";
+  $("sentence").innerHTML = `Probabilité estimée que ce diplômé gagne 50 000 $ ou moins : <b>${d.probability} %</b>.`;
+}
+</script>
+{% endblock %}

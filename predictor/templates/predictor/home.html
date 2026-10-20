@@ -22,4 +22,27 @@
     <li><b>Le modèle</b> renvoie une probabilité, comparée au seuil optimisé.</li>
   </ol>
 </section>
+
+<section class="hero second-hero">
+  <p class="eyebrow">Classification binaire · cible <code>sous_evalue</code></p>
+  <h1>Ce diplômé est-il<br><em>sous-évalué</em>&nbsp;?</h1>
+  <p class="lead">Parmi les diplômés (Licence, Master, école professionnelle, Doctorat), un <strong>{{ sous_evalue.model_name }}</strong> estime la probabilité que le revenu reste <strong>≤ 50&nbsp;000&nbsp;$</strong> malgré le niveau d'études. Objectif&nbsp;: documenter les écarts selon le genre, l'âge, le secteur ou la situation maritale.</p>
+  <a class="btn" href="{% url 'sous_evalue' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>{{ sous_evalue.rows }}</b><span>diplômés après nettoyage</span></div>
+  <div><b>{{ sous_evalue.metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
+  <div><b>{{ sous_evalue.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
+  <div><b>{{ sous_evalue.features|length }}</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Sous-évaluation : comment ça marche</h2>
+  <ol>
+    <li><b>Vous décrivez</b> un diplômé, sans niveau d'études ni revenu (ils définissent la cible).</li>
+    <li><b>Le serveur Django</b> envoie ces valeurs au pipeline <code>sous_evalue/pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie la probabilité de sous-évaluation, comparée au seuil optimisé.</li>
+  </ol>
+</section>
 {% endblock %}

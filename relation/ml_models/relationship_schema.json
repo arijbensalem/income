@@ -1,0 +1,29 @@
+{
+    "feature_columns": [
+        "age",
+        "workclass",
+        "fnlwgt",
+        "education",
+        "education-num",
+        "marital-status",
+        "occupation",
+        "race",
+        "sex",
+        "capital-gain",
+        "capital-loss",
+        "hours-per-week",
+        "native-country",
+        "income"
+    ],
+    "cat_cols": [
+        "workclass",
+        "education",
+        "marital-status",
+        "occupation",
+        "race",
+        "sex",
+        "native-country",
+        "income"
+    ],
+    "target": "relationship"
+}

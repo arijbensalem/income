@@ -45,4 +45,26 @@
     <li><b>Le modèle</b> renvoie la famille la plus probable, avec les trois probabilités.</li>
   </ol>
 </section>
+
+<section class="hero relationship-hero">
+  <p class="eyebrow">Classification multiclasse · cible <code>relationship</code></p>
+  <h1>Quelle <em>relation</em> familiale<br>correspond à ce profil&nbsp;?</h1>
+  <p class="lead">Un modèle <strong>CatBoost</strong> classe un profil selon sa relation familiale : mari, épouse, enfant, non-marié, etc. Utile pour comprendre les patterns socio-démographiques.</p>
+  <a class="btn" href="{% url 'relationship' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>45&nbsp;175</b><span>profils après nettoyage</span></div>
+  <div><b>6</b><span>catégories de relation</span></div>
+  <div><b>14</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Relation : comment ça marche</h2>
+  <ol>
+    <li><b>Vous complétez</b> le formulaire avec les caractéristiques démographiques.</li>
+    <li><b>Le serveur Django</b> envoie les données au modèle CatBoost.</li>
+    <li><b>Le modèle</b> prédit la relation la plus probable avec les probabilités pour chaque catégorie.</li>
+  </ol>
+</section>
 {% endblock %}

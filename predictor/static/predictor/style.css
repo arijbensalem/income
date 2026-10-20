@@ -52,3 +52,15 @@ footer{max-width:1080px;margin:0 auto;padding:0 20px 40px;color:var(--muted);fon
 .second-hero{padding-top:12px}
 .stats.compact{margin:20px 0 4px}
 .stats.compact b{font-size:26px}
+.multi .badge{background:#d9f0e8;color:var(--accent)}
+.meaning{margin:0 0 16px;color:var(--muted);font-size:14px}
+.prob-row{display:grid;grid-template-columns:9.5rem 1fr 3.4rem;gap:10px;align-items:center;font-size:14px}
+.prob-row + .prob-row{margin-top:12px}
+.prob-row b{text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);margin-top:16px}
+.glossary{margin:28px 0 8px}
+.glossary h2{font-size:26px;margin:0 0 14px}
+.glossary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.glossary-grid{grid-template-columns:1fr}}
+.glossary-card h3{margin:0 0 8px;font:700 22px Fraunces,serif;color:var(--accent)}
+.glossary-card p{margin:0;color:var(--muted);font-size:15px}

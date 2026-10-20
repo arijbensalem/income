@@ -45,4 +45,27 @@
     <li><b>Le modèle</b> renvoie la probabilité de sous-évaluation, comparée au seuil optimisé.</li>
   </ol>
 </section>
+
+<section class="hero second-hero">
+  <p class="eyebrow">Classification à 3 classes · cible <code>hours-per-week</code></p>
+  <h1>Combien d'<em>heures</em><br>travaille ce profil&nbsp;?</h1>
+  <p class="lead">Un <strong>{{ hours.model_name }}</strong> ne vise pas le nombre exact d'heures, trop variable d'une personne à l'autre. Il estime la classe la plus probable&nbsp;: <strong>temps partiel</strong> (moins de 35&nbsp;h), <strong>temps plein</strong> (35 à 40&nbsp;h) ou <strong>heures supplémentaires</strong> (plus de 40&nbsp;h).</p>
+  <a class="btn" href="{% url 'hours' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>{{ hours.rows }}</b><span>profils après nettoyage</span></div>
+  <div><b>{{ hours.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
+  <div><b>{{ hours.metrics.macro_f1 }}</b><span>Macro F1 (test)</span></div>
+  <div><b>{{ hours.features|length }}</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Temps de travail : comment ça marche</h2>
+  <ol>
+    <li><b>Vous décrivez</b> le profil, y compris la tranche de revenu, sans les heures.</li>
+    <li><b>Le serveur Django</b> envoie ces valeurs au pipeline <code>hours/pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie la classe la plus probable, avec les trois probabilités.</li>
+  </ol>
+</section>
 {% endblock %}

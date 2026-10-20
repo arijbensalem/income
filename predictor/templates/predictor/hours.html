@@ -1,0 +1,116 @@
+{% extends "predictor/base.html" %}
+{% block title %}Temps de travail · Atelier ML{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<h1 class="page-title">Prédiction du <em>temps de travail</em></h1>
+<p class="lead small">Le modèle ne prédit pas le nombre exact d'heures par semaine, trop variable d'une personne à l'autre. Il estime la <strong>classe de temps de travail</strong> la plus probable parmi les trois définies ci-dessous.</p>
+
+<section class="glossary">
+  <h2>Que signifient les trois classes&nbsp;?</h2>
+  <div class="glossary-grid">
+    <article class="card glossary-card">
+      <h3>Temps partiel</h3>
+      <p>Moins de 35 heures par semaine : emploi à temps réduit, étudiants, retraités en activité, emplois d'appoint.</p>
+    </article>
+    <article class="card glossary-card">
+      <h3>Temps plein</h3>
+      <p>De 35 à 40 heures par semaine : durée standard d'un emploi à plein temps. C'est la classe majoritaire.</p>
+    </article>
+    <article class="card glossary-card">
+      <h3>Heures supplémentaires</h3>
+      <p>Plus de 40 heures par semaine : cadres, indépendants, métiers à horaires étendus.</p>
+    </article>
+  </div>
+</section>
+
+<section class="stats compact">
+  {% for c in classes %}
+  <div><b>{{ c.share }}&nbsp;%</b><span>{{ c.label_fr }} dans le dataset</span></div>
+  {% endfor %}
+  <div><b>{{ config.metrics.accuracy }}</b><span>Accuracy (test) · baseline {{ config.metrics.baseline_accuracy }}</span></div>
+</section>
+
+<div class="grid">
+  <form id="hours-form" class="card" novalidate>
+    {% csrf_token %}
+    <h2>Profil</h2>
+    <div class="fields">
+      {% for field in form %}
+      <label class="field">
+        <span>{{ field.label }}</span>
+        {{ field }}
+        <small class="err" data-err="{{ field.name }}"></small>
+      </label>
+      {% endfor %}
+    </div>
+    <button id="submit" class="btn" type="submit">Lancer l'analyse →</button>
+  </form>
+
+  <aside class="card result" id="result" aria-live="polite">
+    <h2>Résultat</h2>
+    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
+    <div id="output" class="multi" hidden>
+      <div class="badge" id="badge"></div>
+      <p id="meaning" class="meaning"></p>
+      <div class="probs" id="probs"></div>
+      <p id="sentence" class="sentence"></p>
+      <p class="note">Modèle à fiabilité modérée (accuracy {{ config.metrics.accuracy }}, macro F1 {{ config.metrics.macro_f1 }}) : à lire comme une tendance, pas comme une certitude.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById("hours-form");
+const $ = id => document.getElementById(id);
+
+const MEANINGS = {
+  "part-time": "Moins de 35 heures par semaine.",
+  "full-time": "Entre 35 et 40 heures par semaine.",
+  "overtime": "Plus de 40 heures par semaine.",
+};
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  try {
+    const res = await fetch("{% url 'hours_api' %}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json",
+                "X-CSRFToken": payload.csrfmiddlewaretoken},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      for (const [name, errs] of Object.entries(data.errors)) {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (el) el.textContent = errs[0].message;
+      }
+      return;
+    }
+    show(data);
+  } catch (err) {
+    alert("Erreur de connexion au serveur.");
+  } finally {
+    $("submit").disabled = false; $("submit").textContent = "Lancer l'analyse →";
+  }
+});
+
+function show(d) {
+  $("placeholder").hidden = true;
+  $("output").hidden = false;
+  $("badge").textContent = d.label_fr;
+  $("meaning").textContent = MEANINGS[d.label] || "";
+  $("probs").innerHTML = d.classes.map((item) => `
+    <div class="prob-row">
+      <span>${item.label_fr}</span>
+      <div class="gauge"><div class="bar" style="width:${item.probability}%"></div></div>
+      <b>${item.probability} %</b>
+    </div>
+  `).join("");
+  $("sentence").innerHTML = `Classe la plus probable pour ce profil : <b>${d.label_fr}</b> (${d.probability} %).`;
+}
+</script>
+{% endblock %}

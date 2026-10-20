@@ -48,3 +48,30 @@ def predict_sous_evalue(data: dict) -> dict:
         "label": "sous-évalué" if under else "bien payé",
         "under": under,
     }
+
+
+@lru_cache(maxsize=1)
+def load_hours():
+    directory = settings.BASE_DIR / "ml_models" / "hours"
+    pipeline = joblib.load(directory / "pipeline.joblib")
+    config = json.loads((directory / "config.json").read_text(encoding="utf-8"))
+    return pipeline, config
+
+
+def predict_hours(data: dict) -> dict:
+    """data : dict avec les variables brutes (le revenu est une entrée, les heures sont la cible)."""
+    pipeline, config = load_hours()
+    row = pd.DataFrame([data])[config["features"]]
+    proba = pipeline.predict_proba(row)[0]
+    classes = list(pipeline.named_steps["clf"].classes_)
+    probs = {str(label): round(float(proba[i]) * 100, 1) for i, label in enumerate(classes)}
+    # ordre naturel des classes (partiel → plein → heures sup.)
+    ranked = [{"label": c, "label_fr": config["labels_fr"][c], "probability": probs[c]}
+              for c in config["classes"]]
+    top = max(ranked, key=lambda item: item["probability"])
+    return {
+        "label": top["label"],
+        "label_fr": top["label_fr"],
+        "probability": top["probability"],
+        "classes": ranked,
+    }

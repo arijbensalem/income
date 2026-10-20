@@ -6,4 +6,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("prediction-revenu/", views.income_page, name="income"),
     path("api/income/", views.income_api, name="income_api"),
+    path("married/", views.married_view, name="married"),
+    path("api/married/", views.married_api, name="married_api"),
 ]
+

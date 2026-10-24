@@ -28,7 +28,7 @@ class IncomeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        opts = load()[1]["options"]
+        opts = load("income")[1]["options"]
         mapping = {"workclass": "workclass", "occupation": "occupation",
                    "marital_status": "marital-status", "relationship": "relationship",
                    "sex": "sex", "race": "race", "native_country": "native-country"}
@@ -46,4 +46,67 @@ class IncomeForm(forms.Form):
             "relationship": d["relationship"], "race": d["race"], "sex": d["sex"],
             "capital-gain": d["capital_gain"], "capital-loss": d["capital_loss"],
             "hours-per-week": d["hours_per_week"], "native-country": d["native_country"],
+        }
+
+
+# ---------- Formulaire « Jeune actif » (banque / assurance) ----------
+# Libellés en français ; la valeur envoyée au modèle reste la valeur brute du dataset.
+FR_LABELS = {
+    "workclass": {
+        "Private": "Secteur privé", "Self-emp-not-inc": "Indépendant", "Self-emp-inc": "Chef d'entreprise",
+        "Federal-gov": "Fonction publique (État)", "State-gov": "Fonction publique (région)",
+        "Local-gov": "Fonction publique (commune)", "Without-pay": "Non rémunéré",
+    },
+    "marital-status": {
+        "Never-married": "Célibataire", "Married-civ-spouse": "Marié(e)", "Married-AF-spouse": "Marié(e) (conjoint militaire)",
+        "Married-spouse-absent": "Marié(e), conjoint absent", "Divorced": "Divorcé(e)",
+        "Separated": "Séparé(e)", "Widowed": "Veuf / veuve",
+    },
+    "occupation": {
+        "Adm-clerical": "Employé administratif", "Armed-Forces": "Armée", "Craft-repair": "Artisan / réparation",
+        "Exec-managerial": "Cadre / manager", "Farming-fishing": "Agriculture / pêche",
+        "Handlers-cleaners": "Manutention / nettoyage", "Machine-op-inspct": "Opérateur machine",
+        "Other-service": "Services (restauration, aide…)", "Priv-house-serv": "Employé de maison",
+        "Prof-specialty": "Profession intellectuelle", "Protective-serv": "Sécurité / protection",
+        "Sales": "Commerce / vente", "Tech-support": "Support technique", "Transport-moving": "Transport / livraison",
+    },
+    "relationship": {
+        "Own-child": "Vit chez ses parents", "Not-in-family": "Vit seul(e) / colocation",
+        "Husband": "Époux", "Wife": "Épouse", "Unmarried": "Parent seul / non marié(e)",
+        "Other-relative": "Vit chez un autre proche",
+    },
+}
+
+
+class JeuneForm(forms.Form):
+    occupation = forms.ChoiceField(label="Profession")
+    workclass = forms.ChoiceField(label="Type d'employeur")
+    hours_per_week = forms.IntegerField(label="Heures travaillées / semaine", min_value=1, max_value=99)
+    education_num = forms.TypedChoiceField(label="Niveau d'études", choices=EDUCATION, coerce=int)
+    income_gt50k = forms.TypedChoiceField(
+        label="Revenu annuel", coerce=int,
+        choices=[(0, "Jusqu'à 50 000 $"), (1, "Plus de 50 000 $")])
+    marital_status = forms.ChoiceField(label="Situation familiale")
+    relationship = forms.ChoiceField(label="Logement / foyer")
+
+    MAPPING = {"workclass": "workclass", "occupation": "occupation",
+               "marital_status": "marital-status", "relationship": "relationship"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        opts = load("jeune")[1]["options"]
+        for field, key in self.MAPPING.items():
+            labels = FR_LABELS[key]
+            choices = sorted(((v, labels.get(v, v)) for v in opts[key]), key=lambda c: c[1])
+            self.fields[field].choices = [("", "Choisir…")] + choices
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+    def model_input(self) -> dict:
+        d = self.cleaned_data
+        return {
+            "education-num": d["education_num"], "hours-per-week": d["hours_per_week"],
+            "income_gt50k": d["income_gt50k"], "workclass": d["workclass"],
+            "marital-status": d["marital_status"], "occupation": d["occupation"],
+            "relationship": d["relationship"],
         }

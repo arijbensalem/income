@@ -22,4 +22,22 @@
     <li><b>Le modèle</b> renvoie une probabilité, comparée au seuil optimisé.</li>
   </ol>
 </section>
+
+<section class="models">
+  <h2>Nos modèles</h2>
+  <div class="model-grid">
+    <a class="model" href="{% url 'income' %}">
+      <p class="eyebrow">Cible <code>income</code></p>
+      <h3>Revenu supérieur à 50 000 $</h3>
+      <p>Estime la probabilité qu'un profil dépasse 50 000 $ par an. AUC-ROC {{ metrics.auc_roc }}.</p>
+      <span class="go">Prédire un revenu →</span>
+    </a>
+    <a class="model" href="{% url 'jeune' %}">
+      <p class="eyebrow">Cible <code>âge &lt; 30</code> · banque &amp; assurance</p>
+      <h3>Ciblage Jeune Actif</h3>
+      <p>Repère les jeunes actifs dans un fichier client sans âge et propose les bonnes offres. {% widthratio jeune.accuracy 1 100 %}&nbsp;% d'accuracy, {{ jeune.lift }}× plus efficace qu'un ciblage au hasard.</p>
+      <span class="go">Tester un profil →</span>
+    </a>
+  </div>
+</section>
 {% endblock %}

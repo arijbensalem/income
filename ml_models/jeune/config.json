@@ -1,0 +1,69 @@
+{
+  "target": "age < 30",
+  "threshold": 0.36,
+  "features": [
+    "education-num",
+    "hours-per-week",
+    "income_gt50k",
+    "workclass",
+    "marital-status",
+    "occupation",
+    "relationship"
+  ],
+  "n_rows": 45175,
+  "metrics": {
+    "accuracy": 0.829,
+    "accuracy_05": 0.831,
+    "baseline_accuracy": 0.712,
+    "balanced_accuracy": 0.798,
+    "auc_roc": 0.873,
+    "precision": 0.693,
+    "recall": 0.726,
+    "share_young": 0.288,
+    "lift": 2.4
+  },
+  "options": {
+    "workclass": [
+      "Federal-gov",
+      "Local-gov",
+      "Private",
+      "Self-emp-inc",
+      "Self-emp-not-inc",
+      "State-gov",
+      "Without-pay"
+    ],
+    "marital-status": [
+      "Divorced",
+      "Married-AF-spouse",
+      "Married-civ-spouse",
+      "Married-spouse-absent",
+      "Never-married",
+      "Separated",
+      "Widowed"
+    ],
+    "occupation": [
+      "Adm-clerical",
+      "Armed-Forces",
+      "Craft-repair",
+      "Exec-managerial",
+      "Farming-fishing",
+      "Handlers-cleaners",
+      "Machine-op-inspct",
+      "Other-service",
+      "Priv-house-serv",
+      "Prof-specialty",
+      "Protective-serv",
+      "Sales",
+      "Tech-support",
+      "Transport-moving"
+    ],
+    "relationship": [
+      "Husband",
+      "Not-in-family",
+      "Other-relative",
+      "Own-child",
+      "Unmarried",
+      "Wife"
+    ]
+  }
+}

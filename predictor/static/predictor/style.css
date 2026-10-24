@@ -64,7 +64,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 20px 40px;color:var(--muted);fon
 .benefit>b{display:block;font:700 34px Fraunces,serif;color:var(--accent)}
 .benefit h3,.model h3{margin:6px 0 8px;font-size:18px}
 .benefit p,.model p{margin:0;color:var(--muted);font-size:15px}
-.ethics{margin-top:8px}.ethics ul{margin:0;padding-left:20px;color:var(--muted)}.ethics li{margin:6px 0}
+.ethics{margin-top:20px}.ethics ul{margin:0;padding-left:20px;color:var(--muted)}.ethics li{margin:6px 0}
 .models{margin-top:40px}
 .model{text-decoration:none;color:var(--ink);display:block;transition:border-color .2s}
 .model:hover{border-color:var(--accent)}

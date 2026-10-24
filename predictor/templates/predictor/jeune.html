@@ -2,7 +2,7 @@
 {% block title %}Ciblage Jeune Actif · Atelier ML{% endblock %}
 {% block content %}
 <a class="back" href="{% url 'home' %}">← Accueil</a>
-<p class="eyebrow">Classification binaire · cible <code>âge &lt; 30 ans</code> · banque &amp; assurance</p>
+<p class="eyebrow">Banque &amp; assurance · Ciblage marketing</p>
 <h1 class="page-title">Ce client est-il un <em>jeune actif</em>&nbsp;?</h1>
 <p class="lead small">Dans beaucoup de fichiers clients, l'âge est inconnu. À partir de 7 informations simples sur sa situation professionnelle, le modèle repère les profils <b>jeunes actifs (moins de 30 ans)</b> et indique quelles offres bancaires et d'assurance leur proposer.</p>
 
@@ -65,19 +65,13 @@
   </div>
 </section>
 
-<section class="stats">
-  <div><b>{% widthratio m.accuracy 1 100 %}&nbsp;%</b><span>accuracy (test)</span></div>
-  <div><b>{% widthratio m.baseline_accuracy 1 100 %}&nbsp;%</b><span>baseline « toujours non »</span></div>
-  <div><b>{% widthratio m.balanced_accuracy 1 100 %}&nbsp;%</b><span>balanced accuracy</span></div>
-  <div><b>{{ m.auc_roc }}</b><span>AUC-ROC (test)</span></div>
-</section>
 
 <section class="ethics card">
   <h2>Usage responsable</h2>
   <ul>
     <li>L'outil sert <b>uniquement à choisir quelle offre marketing montrer</b>. Il ne doit jamais servir à refuser un crédit, un contrat ou à fixer un prix : l'âge est un critère protégé.</li>
     <li>Le modèle n'utilise <b>ni le sexe, ni l'origine, ni le pays</b> du client.</li>
-    <li>Entraîné sur {{ n_rows }} profils du recensement américain de 1994 (dataset Adult) : à ré-entraîner sur les données du client avant un usage réel.</li>
+    <li>Version de démonstration, construite sur {{ n_rows }} profils publics : elle sera ré-entraînée sur les données de votre établissement avant la mise en service.</li>
   </ul>
 </section>
 {% endblock %}
@@ -140,7 +134,7 @@ function show(d) {
   $("badge").textContent = d.segment;
   $("bar").style.width = d.probability + "%";
   $("mark").style.left = d.threshold + "%";
-  $("thr").textContent = "seuil " + d.threshold + " %";
+  $("thr").textContent = "jeune actif dès " + d.threshold + " %";
   $("sentence").innerHTML = `Probabilité « jeune actif » : <b>${d.probability} %</b> · confiance ${d.confidence}.`;
   $("pitch").textContent = d.pitch;
   fill("bank", d.bank); fill("insurance", d.insurance);

@@ -117,3 +117,49 @@ def predict_occupation(data: dict) -> dict:
         "probability": top["probability"],
         "classes": ranked,
     }
+@lru_cache(maxsize=1)
+def load_relationship():
+    """Charge le modèle CatBoost (import paresseux : catboost n'est requis que pour cette cible)."""
+    from catboost import CatBoostClassifier
+
+    directory = settings.MODEL_ROOT / "relationship"
+    config = json.loads((directory / "config.json").read_text(encoding="utf-8"))
+    model = CatBoostClassifier(verbose=0)
+    model.load_model(str(directory / "pipeline.cbm"))
+    return model, config
+
+
+def predict_relationship(data: dict) -> dict:
+    """data : dict avec les 14 variables brutes (la cible relationship n'en fait pas partie)."""
+    model, config = load_relationship()
+
+    # relationship est la cible, pas une variable d'entrée
+    features = [col for col in config["feature_columns"] if col != "relationship"]
+    row = pd.DataFrame([data])[features]            # même ordre de colonnes qu'à l'entraînement
+
+    for col in config["cat_cols"]:
+        if col in row.columns:
+            row[col] = row[col].astype(str)
+
+    probabilities = model.predict_proba(row)[0]
+    classes = list(model.classes_)
+
+    ranked = sorted(
+        (
+            {
+                "label": str(label),
+                "label_fr": config["labels_fr"].get(str(label), str(label)),
+                "probability": round(float(proba) * 100, 1),
+            }
+            for label, proba in zip(classes, probabilities)
+        ),
+        key=lambda item: item["probability"],
+        reverse=True,
+    )
+    top = ranked[0]
+    return {
+        "label": top["label"],
+        "label_fr": top["label_fr"],
+        "probability": top["probability"],
+        "classes": ranked,
+    }

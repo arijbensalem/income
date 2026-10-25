@@ -7,9 +7,10 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
-from .forms import HoursForm, IncomeForm, JeuneForm, MarriedForm, OccupationForm, SousEvalueForm
+from .forms import (HoursForm, IncomeForm, JeuneForm, MarriedForm, OccupationForm,
+                    RelationshipForm, SousEvalueForm)
 from .ml import (load, load_hours, load_sous_evalue, predict_hours, predict_income,
-                 predict_jeune, predict_occupation, predict_sous_evalue)
+                 predict_jeune, predict_occupation, predict_relationship, predict_sous_evalue)
 
 
 def home(request):
@@ -206,3 +207,24 @@ def occupation_api(request):
     if not form.is_valid():
         return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
     return JsonResponse({"ok": True, **predict_occupation(form.model_input())})
+# ----------------------------------------------------------------------
+# RELATION FAMILIALE (relationship, CatBoost)
+# ----------------------------------------------------------------------
+def relationship_page(request):
+    return render(request, "predictor/relationship.html", {"form": RelationshipForm()})
+
+
+@require_POST
+def relationship_api(request):
+    """Reçoit le formulaire (JSON avec tirets) et retourne la relation familiale la plus probable."""
+    payload, error = _read_payload(request)
+    if error:
+        return error
+
+    # Convertir les tirets en underscores (comme le formulaire Django les attend)
+    payload_converted = {key.replace("-", "_"): value for key, value in payload.items()}
+
+    form = RelationshipForm(payload_converted)
+    if not form.is_valid():
+        return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
+    return JsonResponse({"ok": True, **predict_relationship(form.model_input())})

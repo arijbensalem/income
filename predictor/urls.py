@@ -14,4 +14,6 @@ urlpatterns = [
     path("api/sous-evalue/", views.sous_evalue_api, name="sous_evalue_api"),
     path("temps-de-travail/", views.hours_page, name="hours"),
     path("api/hours/", views.hours_api, name="hours_api"),
+    path("prediction-profession/", views.occupation_page, name="occupation"),
+    path("api/occupation/", views.occupation_api, name="occupation_api"),
 ]

@@ -102,6 +102,12 @@
       <p>Classe un profil en temps partiel, temps plein ou heures supplémentaires. Accuracy {{ hours.metrics.accuracy }}.</p>
       <span class="go">Prédire le temps de travail →</span>
     </a>
+    <a class="model" href="{% url 'occupation' %}">
+      <p class="eyebrow">Cible <code>occupation</code></p>
+      <h3>Famille professionnelle</h3>
+      <p>Estime si un profil relève des métiers « col blanc », « col bleu » ou « services ».</p>
+      <span class="go">Prédire la profession →</span>
+    </a>
   </div>
 </section>
 {% endblock %}

@@ -87,3 +87,33 @@ def predict_hours(data: dict) -> dict:
         "probability": top["probability"],
         "classes": ranked,
     }
+
+def load_occupation():
+    return load("occupation")
+
+
+def predict_occupation(data: dict) -> dict:
+    """data : dict avec les variables brutes (le revenu est une entrée, pas la cible)."""
+    pipeline, config = load_occupation()
+    row = pd.DataFrame([data])[config["features"]]
+    proba = pipeline.predict_proba(row)[0]
+    classes = list(pipeline.named_steps["clf"].classes_)
+    ranked = sorted(
+        (
+            {
+                "label": str(label),
+                "label_fr": config["labels_fr"][str(label)],
+                "probability": round(float(proba[index]) * 100, 1),
+            }
+            for index, label in enumerate(classes)
+        ),
+        key=lambda item: item["probability"],
+        reverse=True,
+    )
+    top = ranked[0]
+    return {
+        "label": top["label"],
+        "label_fr": top["label_fr"],
+        "probability": top["probability"],
+        "classes": ranked,
+    }

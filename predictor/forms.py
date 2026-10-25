@@ -2,7 +2,7 @@ from django import forms
 import json
 from pathlib import Path
 
-from .ml import load
+from .ml import load, load_hours, load_sous_evalue
 
 EDUCATION = [
     (1, "Préscolaire"), (2, "1re–4e année"), (3, "5e–6e année"), (4, "7e–8e année"),
@@ -170,4 +170,87 @@ class JeuneForm(forms.Form):
             "income_gt50k": d["income_gt50k"], "workclass": d["workclass"],
             "marital-status": d["marital_status"], "occupation": d["occupation"],
             "relationship": d["relationship"],
+        }
+
+
+# ----------------------------------------------------------------------
+# DIPLÔMÉ SOUS-ÉVALUÉ
+# ----------------------------------------------------------------------
+class SousEvalueForm(forms.Form):
+    """Profil d'un diplômé (Licence ou plus). Le niveau d'études et le revenu
+    définissent la cible : ils ne sont pas demandés."""
+    age = forms.IntegerField(label="Âge", min_value=17, max_value=90)
+    hours_per_week = forms.IntegerField(label="Heures travaillées / semaine", min_value=1, max_value=99)
+    capital_gain = forms.IntegerField(label="Gains en capital (USD)", min_value=0, max_value=99999, initial=0)
+    capital_loss = forms.IntegerField(label="Pertes en capital (USD)", min_value=0, max_value=4356, initial=0)
+    workclass = forms.ChoiceField(label="Secteur d'emploi")
+    occupation = forms.ChoiceField(label="Profession")
+    marital_status = forms.ChoiceField(label="Situation maritale")
+    relationship = forms.ChoiceField(label="Rôle dans le foyer")
+    sex = forms.ChoiceField(label="Sexe")
+    race = forms.ChoiceField(label="Origine (catégorie UCI)")
+    native_country = forms.ChoiceField(label="Pays d'origine")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        opts = load_sous_evalue()[1]["options"]
+        mapping = {"workclass": "workclass", "occupation": "occupation",
+                   "marital_status": "marital-status", "relationship": "relationship",
+                   "sex": "sex", "race": "race", "native_country": "native-country"}
+        for field, key in mapping.items():
+            self.fields[field].choices = [("", "Choisir…")] + [(v, v.replace("-", " ")) for v in opts[key]]
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+    def model_input(self) -> dict:
+        d = self.cleaned_data
+        return {
+            "age": d["age"], "workclass": d["workclass"],
+            "marital-status": d["marital_status"], "occupation": d["occupation"],
+            "relationship": d["relationship"], "race": d["race"], "sex": d["sex"],
+            "capital-gain": d["capital_gain"], "capital-loss": d["capital_loss"],
+            "hours-per-week": d["hours_per_week"], "native-country": d["native_country"],
+        }
+
+
+# ----------------------------------------------------------------------
+# TEMPS DE TRAVAIL
+# ----------------------------------------------------------------------
+class HoursForm(forms.Form):
+    """Profil complet sauf les heures travaillées (la cible). Le revenu est une entrée."""
+    age = forms.IntegerField(label="Âge", min_value=17, max_value=90)
+    education_num = forms.TypedChoiceField(label="Niveau d'études", choices=EDUCATION, coerce=int)
+    capital_gain = forms.IntegerField(label="Gains en capital (USD)", min_value=0, max_value=99999, initial=0)
+    capital_loss = forms.IntegerField(label="Pertes en capital (USD)", min_value=0, max_value=4356, initial=0)
+    workclass = forms.ChoiceField(label="Secteur d'emploi")
+    occupation = forms.ChoiceField(label="Profession")
+    marital_status = forms.ChoiceField(label="Situation maritale")
+    relationship = forms.ChoiceField(label="Rôle dans le foyer")
+    sex = forms.ChoiceField(label="Sexe")
+    race = forms.ChoiceField(label="Origine (catégorie UCI)")
+    native_country = forms.ChoiceField(label="Pays d'origine")
+    income = forms.ChoiceField(label="Revenu annuel")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        opts = load_hours()[1]["options"]
+        mapping = {"workclass": "workclass", "occupation": "occupation",
+                   "marital_status": "marital-status", "relationship": "relationship",
+                   "sex": "sex", "race": "race", "native_country": "native-country",
+                   "income": "income"}
+        income_labels = {"<=50K": "≤ 50 000 $", ">50K": "> 50 000 $"}
+        for field, key in mapping.items():
+            self.fields[field].choices = [("", "Choisir…")] + [
+                (v, income_labels.get(v, v.replace("-", " "))) for v in opts[key]]
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+    def model_input(self) -> dict:
+        d = self.cleaned_data
+        return {
+            "age": d["age"], "workclass": d["workclass"], "education-num": d["education_num"],
+            "marital-status": d["marital_status"], "occupation": d["occupation"],
+            "relationship": d["relationship"], "race": d["race"], "sex": d["sex"],
+            "capital-gain": d["capital_gain"], "capital-loss": d["capital_loss"],
+            "native-country": d["native_country"], "income": d["income"],
         }

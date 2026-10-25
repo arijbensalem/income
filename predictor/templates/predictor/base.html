@@ -16,10 +16,11 @@
       <a href="{% url 'jeune' %}">Jeune actif</a>
       <a href="{% url 'income' %}" class="cta">Prédire un revenu</a>
       <a href="{% url 'married' %}" class="cta">Prédire le statut marital</a>
+      <a href="{% url 'sous_evalue' %}" class="cta">Diplômé sous-évalué&nbsp;?</a>
+      <a href="{% url 'hours' %}" class="cta">Temps de travail</a>
     </nav>
   </header>
   <main>{% block content %}{% endblock %}</main>
-  <footer>Projet ML avancé · dataset Adult (UCI) · Résultats expérimentaux, à ne pas utiliser pour décider du sort d'une personne.</footer>
-  {% block scripts %}{% endblock %}
+  <footer>Projet ML avancé · dataset Adult (UCI) · Résultats expérimentaux, à ne pas utiliser pour décider du sort d'une personne.</footer>  {% block scripts %}{% endblock %}
 </body>
 </html>

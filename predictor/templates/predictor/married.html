@@ -1,0 +1,82 @@
+{% extends "predictor/base.html" %}
+{% block title %}Prédiction du statut marital · Atelier ML{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<h1 class="page-title">Prédiction du <em>statut marital</em></h1>
+<p class="lead small">Renseignez le profil, le modèle estime la probabilité d'un statut marié.</p>
+
+<div class="grid">
+  <form id="married-form" class="card" novalidate>
+    {% csrf_token %}
+    <h2>Profil</h2>
+    <div class="fields">
+      {% for field in form %}
+      <label class="field {% if field.name in 'workclass occupation' %}{% endif %}">
+        <span>{{ field.label }}</span>
+        {{ field }}
+        <small class="err" data-err="{{ field.name }}"></small>
+      </label>
+      {% endfor %}
+    </div>
+    <button id="submit" class="btn" type="submit">Lancer l'analyse →</button>
+  </form>
+
+  <aside class="card result" id="result" aria-live="polite">
+    <h2>Résultat</h2>
+    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
+    <div id="output" hidden>
+      <div class="badge" id="badge"></div>
+      <div class="gauge"><div class="bar" id="bar"></div><div class="mark" id="mark"></div></div>
+      <div class="gauge-legend"><span>0 %</span><span id="thr"></span><span>100 %</span></div>
+      <p id="sentence" class="sentence"></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const form = document.getElementById("married-form");
+const $ = id => document.getElementById(id);
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  try {
+    const res = await fetch("{% url 'married_api' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": payload.csrfmiddlewaretoken
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      for (const [name, errs] of Object.entries(data.errors)) {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (el) el.textContent = errs[0].message;
+      }
+      return;
+    }
+    show(data);
+  } catch (err) {
+    alert("Erreur de connexion au serveur.");
+  } finally {
+    $("submit").disabled = false; $("submit").textContent = "Lancer l'analyse →";
+  }
+});
+
+function show(d) {
+  $("placeholder").hidden = true; $("output").hidden = false;
+  $("output").className = d.high ? "high" : "low";
+  $("badge").textContent = d.high ? "Statut : Marié(e)" : "Statut : Non-marié(e)";
+  $("bar").style.width = d.probability + "%";
+  $("mark").style.left = d.threshold + "%";
+  $("thr").textContent = "seuil " + d.threshold + " %";
+  $("sentence").innerHTML = `Probabilité estimée du statut marié(e) : <b>${d.probability} %</b>.`;
+}
+</script>
+{% endblock %}

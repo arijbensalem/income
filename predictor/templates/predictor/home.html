@@ -22,4 +22,98 @@
     <li><b>Le modèle</b> renvoie une probabilité, comparée au seuil optimisé.</li>
   </ol>
 </section>
+
+<section class="hero second-hero">
+  <p class="eyebrow">Classification binaire · cible <code>sous_evalue</code></p>
+  <h1>Ce diplômé est-il<br><em>sous-évalué</em>&nbsp;?</h1>
+  <p class="lead">Parmi les diplômés (Licence, Master, école professionnelle, Doctorat), un <strong>{{ sous_evalue.model_name }}</strong> estime la probabilité que le revenu reste <strong>≤ 50&nbsp;000&nbsp;$</strong> malgré le niveau d'études. Objectif&nbsp;: documenter les écarts selon le genre, l'âge, le secteur ou la situation maritale.</p>
+  <a class="btn" href="{% url 'sous_evalue' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>{{ sous_evalue.rows }}</b><span>diplômés après nettoyage</span></div>
+  <div><b>{{ sous_evalue.metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
+  <div><b>{{ sous_evalue.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
+  <div><b>{{ sous_evalue.features|length }}</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Sous-évaluation : comment ça marche</h2>
+  <ol>
+    <li><b>Vous décrivez</b> un diplômé, sans niveau d'études ni revenu (ils définissent la cible).</li>
+    <li><b>Le serveur Django</b> envoie ces valeurs au pipeline <code>sous_evalue/pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie la probabilité de sous-évaluation, comparée au seuil optimisé.</li>
+  </ol>
+</section>
+
+<section class="hero second-hero">
+  <p class="eyebrow">Classification à 3 classes · cible <code>hours-per-week</code></p>
+  <h1>Combien d'<em>heures</em><br>travaille ce profil&nbsp;?</h1>
+  <p class="lead">Un <strong>{{ hours.model_name }}</strong> ne vise pas le nombre exact d'heures, trop variable d'une personne à l'autre. Il estime la classe la plus probable&nbsp;: <strong>temps partiel</strong> (moins de 35&nbsp;h), <strong>temps plein</strong> (35 à 40&nbsp;h) ou <strong>heures supplémentaires</strong> (plus de 40&nbsp;h).</p>
+  <a class="btn" href="{% url 'hours' %}">Lancer une prédiction →</a>
+</section>
+
+<section class="stats">
+  <div><b>{{ hours.rows }}</b><span>profils après nettoyage</span></div>
+  <div><b>{{ hours.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
+  <div><b>{{ hours.metrics.macro_f1 }}</b><span>Macro F1 (test)</span></div>
+  <div><b>{{ hours.features|length }}</b><span>variables d'entrée</span></div>
+</section>
+
+<section class="steps">
+  <h2>Temps de travail : comment ça marche</h2>
+  <ol>
+    <li><b>Vous décrivez</b> le profil, y compris la tranche de revenu, sans les heures.</li>
+    <li><b>Le serveur Django</b> envoie ces valeurs au pipeline <code>hours/pipeline.joblib</code>.</li>
+    <li><b>Le modèle</b> renvoie la classe la plus probable, avec les trois probabilités.</li>
+  </ol>
+</section>
+
+<section class="models">
+  <h2>Nos modèles</h2>
+  <div class="model-grid">
+    <a class="model" href="{% url 'income' %}">
+      <p class="eyebrow">Cible <code>income</code></p>
+      <h3>Revenu supérieur à 50 000 $</h3>
+      <p>Estime la probabilité qu'un profil dépasse 50 000 $ par an. AUC-ROC {{ metrics.auc_roc }}.</p>
+      <span class="go">Prédire un revenu →</span>
+    </a>
+    <a class="model" href="{% url 'married' %}">
+      <p class="eyebrow">Cible <code>married</code></p>
+      <h3>Statut marital</h3>
+      <p>Estime si une personne est mariée à partir de son profil socio-économique.</p>
+      <span class="go">Prédire le statut marital →</span>
+    </a>
+    <a class="model" href="{% url 'jeune' %}">
+      <p class="eyebrow">Banque &amp; assurance</p>
+      <h3>Ciblage Jeune Actif</h3>
+      <p>Repère les jeunes actifs dans un fichier client et propose les bonnes offres : un ciblage {{ jeune.lift }}× plus efficace qu'un envoi au hasard.</p>
+      <span class="go">Tester un profil →</span>
+    </a>
+    <a class="model" href="{% url 'sous_evalue' %}">
+      <p class="eyebrow">Cible <code>sous_evalue</code></p>
+      <h3>Diplômé sous-évalué</h3>
+      <p>Repère les diplômés dont le revenu reste ≤ 50 000 $. AUC-ROC {{ sous_evalue.metrics.auc_roc }}.</p>
+      <span class="go">Tester un diplômé →</span>
+    </a>
+    <a class="model" href="{% url 'hours' %}">
+      <p class="eyebrow">Cible <code>hours-per-week</code></p>
+      <h3>Temps de travail</h3>
+      <p>Classe un profil en temps partiel, temps plein ou heures supplémentaires. Accuracy {{ hours.metrics.accuracy }}.</p>
+      <span class="go">Prédire le temps de travail →</span>
+    </a>
+    <a class="model" href="{% url 'occupation' %}">
+      <p class="eyebrow">Cible <code>occupation</code></p>
+      <h3>Famille professionnelle</h3>
+      <p>Estime si un profil relève des métiers « col blanc », « col bleu » ou « services ».</p>
+      <span class="go">Prédire la profession →</span>
+    </a>
+        <a class="model" href="{% url 'relationship' %}">
+      <p class="eyebrow">Cible <code>relationship</code></p>
+      <h3>Relation familiale</h3>
+      <p>Estime le rôle d'une personne dans son foyer (époux, épouse, enfant, vit seul…) avec CatBoost.</p>
+      <span class="go">Prédire la relation →</span>
+    </a>
+  </div>
+</section>
 {% endblock %}

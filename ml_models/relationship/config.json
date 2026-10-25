@@ -1,0 +1,37 @@
+{
+    "feature_columns": [
+        "age",
+        "workclass",
+        "fnlwgt",
+        "education",
+        "education-num",
+        "marital-status",
+        "occupation",
+        "race",
+        "sex",
+        "capital-gain",
+        "capital-loss",
+        "hours-per-week",
+        "native-country",
+        "income"
+    ],
+    "cat_cols": [
+        "workclass",
+        "education",
+        "marital-status",
+        "occupation",
+        "race",
+        "sex",
+        "native-country",
+        "income"
+    ],
+    "target": "relationship",
+    "labels_fr": {
+        "Husband": "Mari",
+        "Wife": "Épouse",
+        "Own-child": "Enfant propre",
+        "Unmarried": "Non marié(e)",
+        "Not-in-family": "Pas de lien de famille",
+        "Other-relative": "Autre parent"
+    }
+}

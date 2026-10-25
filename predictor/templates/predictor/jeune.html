@@ -1,0 +1,143 @@
+{% extends "predictor/base.html" %}
+{% block title %}Ciblage Jeune Actif · Atelier ML{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<p class="eyebrow">Banque &amp; assurance · Ciblage marketing</p>
+<h1 class="page-title">Ce client est-il un <em>jeune actif</em>&nbsp;?</h1>
+<p class="lead small">Dans beaucoup de fichiers clients, l'âge est inconnu. À partir de 7 informations simples sur sa situation professionnelle, le modèle repère les profils <b>jeunes actifs (moins de 30 ans)</b> et indique quelles offres bancaires et d'assurance leur proposer.</p>
+
+<div class="grid">
+  <form id="jeune-form" class="card" novalidate>
+    {% csrf_token %}
+    <h2>Profil du client</h2>
+    <div class="fields">
+      {% for field in form %}
+      <label class="field">
+        <span>{{ field.label }}</span>
+        {{ field }}
+        <small class="err" data-err="{{ field.name }}"></small>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="examples">
+      <span>Exemples :</span>
+      <button type="button" class="chip" data-example="jeune">Jeune vendeur</button>
+      <button type="button" class="chip" data-example="confirme">Cadre marié</button>
+    </div>
+    <button id="submit" class="btn" type="submit">Analyser le profil →</button>
+  </form>
+
+  <aside class="card result" id="result" aria-live="polite">
+    <h2>Résultat</h2>
+    <div id="placeholder" class="placeholder">Le segment du client et les offres à lui proposer apparaîtront ici.</div>
+    <div id="output" hidden>
+      <div class="badge" id="badge"></div>
+      <div class="gauge"><div class="bar" id="bar"></div><div class="mark" id="mark"></div></div>
+      <div class="gauge-legend"><span>0 %</span><span id="thr"></span><span>100 %</span></div>
+      <p id="sentence" class="sentence"></p>
+      <p id="pitch" class="pitch"></p>
+      <h3>🏦 Offres banque</h3>
+      <ul class="offers" id="bank"></ul>
+      <h3>🛡️ Offres assurance</h3>
+      <ul class="offers" id="insurance"></ul>
+    </div>
+  </aside>
+</div>
+
+<section class="benefits">
+  <h2>Ce que l'outil apporte à une banque ou un assureur</h2>
+  <div class="benefit-grid">
+    <article class="benefit">
+      <b>{{ m.lift }}×</b>
+      <h3>Cibler les bons clients</h3>
+      <p>Sur <b>1&nbsp;000 clients</b> choisis par le modèle, environ <b>{% widthratio m.precision 1 1000 %}</b> sont de vrais jeunes actifs, contre <b>{% widthratio m.share_young 1 1000 %}</b> en ciblant au hasard.</p>
+    </article>
+    <article class="benefit">
+      <b>−{{ savings }}&nbsp;%</b>
+      <h3>Dépenser moins en marketing</h3>
+      <p>Moins de SMS, e-mails et appels envoyés aux mauvaises personnes : pour le même nombre de jeunes touchés, le coût par jeune client touché baisse d'environ {{ savings }}&nbsp;%.</p>
+    </article>
+    <article class="benefit">
+      <b>{% widthratio m.recall 1 100 %}&nbsp;%</b>
+      <h3>Fidéliser tôt</h3>
+      <p>Le modèle retrouve {% widthratio m.recall 1 100 %}&nbsp;% des jeunes actifs. Un client conquis à 25 ans peut rester des dizaines d'années : compte, épargne, puis crédit immobilier et assurance famille.</p>
+    </article>
+  </div>
+</section>
+
+
+<section class="ethics card">
+  <h2>Usage responsable</h2>
+  <ul>
+    <li>L'outil sert <b>uniquement à choisir quelle offre marketing montrer</b>. Il ne doit jamais servir à refuser un crédit, un contrat ou à fixer un prix : l'âge est un critère protégé.</li>
+    <li>Le modèle n'utilise <b>ni le sexe, ni l'origine, ni le pays</b> du client.</li>
+    <li>Version de démonstration, construite sur {{ n_rows }} profils publics : elle sera ré-entraînée sur les données de votre établissement avant la mise en service.</li>
+  </ul>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById("jeune-form");
+const $ = id => document.getElementById(id);
+
+const EXAMPLES = {
+  jeune:    {occupation: "Sales", workclass: "Private", hours_per_week: 30, education_num: 10,
+             income_gt50k: 0, marital_status: "Never-married", relationship: "Own-child"},
+  confirme: {occupation: "Exec-managerial", workclass: "Private", hours_per_week: 50, education_num: 13,
+             income_gt50k: 1, marital_status: "Married-civ-spouse", relationship: "Husband"},
+};
+document.querySelectorAll("[data-example]").forEach(btn => btn.addEventListener("click", () => {
+  for (const [k, v] of Object.entries(EXAMPLES[btn.dataset.example])) form.elements[k].value = v;
+  form.requestSubmit();
+}));
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  try {
+    const res = await fetch("{% url 'jeune_api' %}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": payload.csrfmiddlewaretoken},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      for (const [name, errs] of Object.entries(data.errors)) {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (el) el.textContent = errs[0].message;
+      }
+      return;
+    }
+    show(data);
+  } catch (err) {
+    alert("Erreur de connexion au serveur.");
+  } finally {
+    $("submit").disabled = false; $("submit").textContent = "Analyser le profil →";
+  }
+});
+
+function fill(listId, items) {
+  const ul = $(listId); ul.innerHTML = "";
+  for (const [title, text] of items) {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = title;
+    li.append(b, document.createTextNode(" — " + text));
+    ul.append(li);
+  }
+}
+
+function show(d) {
+  $("placeholder").hidden = true; $("output").hidden = false;
+  $("output").className = d.young ? "high" : "low";
+  $("badge").textContent = d.segment;
+  $("bar").style.width = d.probability + "%";
+  $("mark").style.left = d.threshold + "%";
+  $("thr").textContent = "jeune actif dès " + d.threshold + " %";
+  $("sentence").innerHTML = `Probabilité « jeune actif » : <b>${d.probability} %</b> · confiance ${d.confidence}.`;
+  $("pitch").textContent = d.pitch;
+  fill("bank", d.bank); fill("insurance", d.insurance);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "predictor/base.html" %}
+{% block title %}Prédiction de la profession · Atelier ML{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<h1 class="page-title">Prédiction de la <em>profession</em></h1>
+<p class="lead small">Le modèle ne prédit pas l'intitulé exact du métier (14 catégories trop proches dans le recensement). Il estime plutôt la <strong>famille professionnelle</strong> la plus probable parmi trois groupes définis ci-dessous.</p>
+
+<section class="glossary">
+  <h2>Que signifient les trois familles&nbsp;?</h2>
+  <div class="glossary-grid">
+    <article class="card glossary-card">
+      <h3>Col blanc</h3>
+      <p>Métiers de bureau, de direction, de vente ou de spécialisation intellectuelle. Peu de travail manuel physique.</p>
+      <ul>
+        <li><b>Exec-managerial</b> — cadres et managers</li>
+        <li><b>Prof-specialty</b> — professions spécialisées (enseignants, ingénieurs, médecins…)</li>
+        <li><b>Tech-support</b> — support technique</li>
+        <li><b>Adm-clerical</b> — administration et secrétariat</li>
+        <li><b>Sales</b> — vente et commerce</li>
+      </ul>
+    </article>
+    <article class="card glossary-card">
+      <h3>Col bleu</h3>
+      <p>Métiers manuels, industriels ou physiques : fabrication, réparation, transport, manutention, agriculture.</p>
+      <ul>
+        <li><b>Craft-repair</b> — artisans et réparateurs</li>
+        <li><b>Machine-op-inspct</b> — opérateurs et contrôleurs de machine</li>
+        <li><b>Transport-moving</b> — transport et déménagement</li>
+        <li><b>Handlers-cleaners</b> — manutentionnaires et nettoyeurs industriels</li>
+        <li><b>Farming-fishing</b> — agriculture et pêche</li>
+      </ul>
+    </article>
+    <article class="card glossary-card">
+      <h3>Services</h3>
+      <p>Métiers au service des personnes : restauration, entretien domestique, sécurité, services divers.</p>
+      <ul>
+        <li><b>Other-service</b> — restauration, hôtellerie, services divers</li>
+        <li><b>Protective-serv</b> — sécurité et protection (police, gardiennage…)</li>
+        <li><b>Priv-house-serv</b> — emploi domestique</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<div class="grid">
+  <form id="occupation-form" class="card" novalidate>
+    {% csrf_token %}
+    <h2>Profil</h2>
+    <div class="fields">
+      {% for field in form %}
+      <label class="field">
+        <span>{{ field.label }}</span>
+        {{ field }}
+        <small class="err" data-err="{{ field.name }}"></small>
+      </label>
+      {% endfor %}
+    </div>
+    <button id="submit" class="btn" type="submit">Lancer l'analyse →</button>
+  </form>
+
+  <aside class="card result" id="result" aria-live="polite">
+    <h2>Résultat</h2>
+    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
+    <div id="output" class="family" hidden>
+      <div class="badge" id="badge"></div>
+      <p id="meaning" class="meaning"></p>
+      <div class="probs" id="probs"></div>
+      <p id="sentence" class="sentence"></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById("occupation-form");
+const $ = id => document.getElementById(id);
+
+const MEANINGS = {
+  "White-collar": "Col blanc : métier de bureau, de direction, de vente ou de spécialisation (cadres, professions spécialisées, support technique, administration, commerce).",
+  "Blue-collar": "Col bleu : métier manuel ou industriel (artisans, opérateurs de machine, transport, manutention, agriculture).",
+  "Service": "Services : métier au service des personnes (restauration, hôtellerie, sécurité, emploi domestique).",
+};
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  try {
+    const res = await fetch("{% url 'occupation_api' %}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json",
+                "X-CSRFToken": payload.csrfmiddlewaretoken},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      for (const [name, errs] of Object.entries(data.errors)) {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (el) el.textContent = errs[0].message;
+      }
+      return;
+    }
+    show(data);
+  } catch (err) {
+    alert("Erreur de connexion au serveur.");
+  } finally {
+    $("submit").disabled = false; $("submit").textContent = "Lancer l'analyse →";
+  }
+});
+
+function show(d) {
+  $("placeholder").hidden = true;
+  $("output").hidden = false;
+  $("badge").textContent = d.label_fr;
+  $("meaning").textContent = MEANINGS[d.label] || "";
+  $("probs").innerHTML = d.classes.map((item) => `
+    <div class="prob-row">
+      <span>${item.label_fr}</span>
+      <div class="gauge"><div class="bar" style="width:${item.probability}%"></div></div>
+      <b>${item.probability} %</b>
+    </div>
+  `).join("");
+  $("sentence").innerHTML = `Famille la plus probable pour ce profil : <b>${d.label_fr}</b> (${d.probability} %).`;
+}
+</script>
+{% endblock %}

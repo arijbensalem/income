@@ -25,5 +25,13 @@
         "native-country",
         "income"
     ],
-    "target": "relationship"
+    "target": "relationship",
+    "labels_fr": {
+        "Husband": "Mari",
+        "Wife": "Épouse",
+        "Own-child": "Enfant propre",
+        "Unmarried": "Non marié(e)",
+        "Not-in-family": "Pas de lien de famille",
+        "Other-relative": "Autre parent"
+    }
 }

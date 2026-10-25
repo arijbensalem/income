@@ -3,7 +3,7 @@
 {% block content %}
 <a class="back" href="{% url 'home' %}">← Accueil</a>
 <h1 class="page-title">Prédiction de la <em>relation</em></h1>
-<p class="lead small">Reconnaître la relation familiale à partir des caractéristiques démographiques et professionnelles.</p>
+<p class="lead small">Le modèle prédit la relation familiale (ou l'absence de lien) entre une personne et le chef de famille, à partir de ses caractéristiques démographiques et professionnelles.</p>
 
 <div class="grid">
   <form id="relationship-form" class="card" novalidate>
@@ -47,34 +47,17 @@ const MEANINGS = {
   "Other-relative": "Autre parent : personne ayant un lien familial autre que mari/femme/enfant.",
 };
 
-const LABELS_FR = {
-  "Husband": "Mari",
-  "Wife": "Épouse",
-  "Own-child": "Enfant propre",
-  "Unmarried": "Non marié(e)",
-  "Not-in-family": "Pas de lien de famille",
-  "Other-relative": "Autre parent",
-};
-
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   document.querySelectorAll(".err").forEach(el => el.textContent = "");
   const payload = Object.fromEntries(new FormData(form).entries());
-  
-  // Convertir underscores en tirets pour les noms de champs (comme le dossier relation)
-  const payloadWithDashes = {};
-  for (const [key, value] of Object.entries(payload)) {
-    const newKey = key.replace('_', '-');
-    payloadWithDashes[newKey] = value;
-  }
-  
   $("submit").disabled = true; $("submit").textContent = "Analyse…";
   try {
     const res = await fetch("{% url 'relationship_api' %}", {
       method: "POST",
       headers: {"Content-Type": "application/json",
                 "X-CSRFToken": payload.csrfmiddlewaretoken},
-      body: JSON.stringify(payloadWithDashes),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -95,25 +78,16 @@ form.addEventListener("submit", async (e) => {
 function show(d) {
   $("placeholder").hidden = true;
   $("output").hidden = false;
-  const predictionLabel = LABELS_FR[d.prediction] || d.prediction;
-  $("badge").textContent = predictionLabel;
-  $("meaning").textContent = MEANINGS[d.prediction] || "";
-  
-  // Afficher les probabilités pour chaque classe
-  const relationOrder = ["Husband", "Wife", "Own-child", "Unmarried", "Not-in-family", "Other-relative"];
-  $("probs").innerHTML = relationOrder.map((rel) => {
-    const prob = d.probabilities[rel] || 0;
-    const label = LABELS_FR[rel] || rel;
-    return `
-      <div class="prob-row">
-        <span>${label}</span>
-        <div class="gauge"><div class="bar" style="width:${prob}%"></div></div>
-        <b>${prob.toFixed(1)} %</b>
-      </div>
-    `;
-  }).join("");
-  
-  $("sentence").innerHTML = `Relation prédite : <b>${predictionLabel}</b> (confiance ${d.confidence} %).`;
+  $("badge").textContent = d.label_fr;
+  $("meaning").textContent = MEANINGS[d.label] || "";
+  $("probs").innerHTML = d.classes.map((item) => `
+    <div class="prob-row">
+      <span>${item.label_fr}</span>
+      <div class="gauge"><div class="bar" style="width:${item.probability}%"></div></div>
+      <b>${item.probability} %</b>
+    </div>
+  `).join("");
+  $("sentence").innerHTML = `Relation la plus probable pour ce profil : <b>${d.label_fr}</b> (${d.probability} %).`;
 }
 </script>
 {% endblock %}

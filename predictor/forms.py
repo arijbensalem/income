@@ -30,7 +30,7 @@ class IncomeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        opts = load()[1]["options"]
+        opts = load("income")[1]["options"]
         mapping = {"workclass": "workclass", "occupation": "occupation",
                    "marital_status": "marital-status", "relationship": "relationship",
                    "sex": "sex", "race": "race", "native_country": "native-country"}
@@ -51,6 +51,9 @@ class IncomeForm(forms.Form):
         }
 
 
+# ----------------------------------------------------------------------
+# MARRIED
+# ----------------------------------------------------------------------
 # Charger la configuration pour récupérer les options dynamiques du modèle married
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "ml_models" / "married" / "config.json"
 options = {}
@@ -58,13 +61,14 @@ if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     options = config.get("options", {})
 
+
 class MarriedForm(forms.Form):
     age = forms.IntegerField(label="Âge", min_value=17, max_value=90)
     hours_per_week = forms.IntegerField(label="Heures travaillées / semaine", min_value=1, max_value=99)
     education_num = forms.TypedChoiceField(label="Niveau d'études", choices=EDUCATION, coerce=int)
     capital_gain = forms.IntegerField(label="Gains en capital (USD)", min_value=0, max_value=99999, initial=0)
     capital_loss = forms.IntegerField(label="Pertes en capital (USD)", min_value=0, max_value=4356, initial=0)
-    
+
     workclass = forms.ChoiceField(label="Secteur d'emploi")
     occupation = forms.ChoiceField(label="Profession")
     race = forms.ChoiceField(label="Race")
@@ -73,13 +77,13 @@ class MarriedForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        married_opts = options # from your loaded config.json
+        married_opts = options  # chargé depuis config.json
         mapping = {
-            "workclass": "workclass", 
+            "workclass": "workclass",
             "occupation": "occupation",
             "race": "race",
-            "sex": "sex", 
-            "native_country": "native-country"
+            "sex": "sex",
+            "native_country": "native-country",
         }
         for field, key in mapping.items():
             if key in married_opts:
@@ -90,15 +94,80 @@ class MarriedForm(forms.Form):
     def model_input(self) -> dict:
         d = self.cleaned_data
         return {
-            "age": d["age"], 
-            "workclass": d["workclass"], 
+            "age": d["age"],
+            "workclass": d["workclass"],
             "education-num": d["education_num"],
-            "occupation": d["occupation"], 
-            "race": d["race"], 
+            "occupation": d["occupation"],
+            "race": d["race"],
             "sex": d["sex"],
-            "capital-gain": d["capital-gain"] if "capital-gain" in d else d["capital_gain"], 
-            "capital-loss": d["capital-loss"] if "capital-loss" in d else d["capital_loss"],
-            "hours-per-week": d["hours_per_week"], 
+            "capital-gain": d["capital_gain"],
+            "capital-loss": d["capital_loss"],
+            "hours-per-week": d["hours_per_week"],
             "native-country": d["native_country"],
             "income": "<=50K",
+        }
+
+
+# ----------------------------------------------------------------------
+# JEUNE ACTIF (banque / assurance)
+# ----------------------------------------------------------------------
+# Libellés en français ; la valeur envoyée au modèle reste la valeur brute du dataset.
+FR_LABELS = {
+    "workclass": {
+        "Private": "Secteur privé", "Self-emp-not-inc": "Indépendant", "Self-emp-inc": "Chef d'entreprise",
+        "Federal-gov": "Fonction publique (État)", "State-gov": "Fonction publique (région)",
+        "Local-gov": "Fonction publique (commune)", "Without-pay": "Non rémunéré",
+    },
+    "marital-status": {
+        "Never-married": "Célibataire", "Married-civ-spouse": "Marié(e)", "Married-AF-spouse": "Marié(e) (conjoint militaire)",
+        "Married-spouse-absent": "Marié(e), conjoint absent", "Divorced": "Divorcé(e)",
+        "Separated": "Séparé(e)", "Widowed": "Veuf / veuve",
+    },
+    "occupation": {
+        "Adm-clerical": "Employé administratif", "Armed-Forces": "Armée", "Craft-repair": "Artisan / réparation",
+        "Exec-managerial": "Cadre / manager", "Farming-fishing": "Agriculture / pêche",
+        "Handlers-cleaners": "Manutention / nettoyage", "Machine-op-inspct": "Opérateur machine",
+        "Other-service": "Services (restauration, aide…)", "Priv-house-serv": "Employé de maison",
+        "Prof-specialty": "Profession intellectuelle", "Protective-serv": "Sécurité / protection",
+        "Sales": "Commerce / vente", "Tech-support": "Support technique", "Transport-moving": "Transport / livraison",
+    },
+    "relationship": {
+        "Own-child": "Vit chez ses parents", "Not-in-family": "Vit seul(e) / colocation",
+        "Husband": "Époux", "Wife": "Épouse", "Unmarried": "Parent seul / non marié(e)",
+        "Other-relative": "Vit chez un autre proche",
+    },
+}
+
+
+class JeuneForm(forms.Form):
+    occupation = forms.ChoiceField(label="Profession")
+    workclass = forms.ChoiceField(label="Type d'employeur")
+    hours_per_week = forms.IntegerField(label="Heures travaillées / semaine", min_value=1, max_value=99)
+    education_num = forms.TypedChoiceField(label="Niveau d'études", choices=EDUCATION, coerce=int)
+    income_gt50k = forms.TypedChoiceField(
+        label="Revenu annuel", coerce=int,
+        choices=[(0, "Jusqu'à 50 000 $"), (1, "Plus de 50 000 $")])
+    marital_status = forms.ChoiceField(label="Situation familiale")
+    relationship = forms.ChoiceField(label="Logement / foyer")
+
+    MAPPING = {"workclass": "workclass", "occupation": "occupation",
+               "marital_status": "marital-status", "relationship": "relationship"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        opts = load("jeune")[1]["options"]
+        for field, key in self.MAPPING.items():
+            labels = FR_LABELS[key]
+            choices = sorted(((v, labels.get(v, v)) for v in opts[key]), key=lambda c: c[1])
+            self.fields[field].choices = [("", "Choisir…")] + choices
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+    def model_input(self) -> dict:
+        d = self.cleaned_data
+        return {
+            "education-num": d["education_num"], "hours-per-week": d["hours_per_week"],
+            "income_gt50k": d["income_gt50k"], "workclass": d["workclass"],
+            "marital-status": d["marital_status"], "occupation": d["occupation"],
+            "relationship": d["relationship"],
         }

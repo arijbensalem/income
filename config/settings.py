@@ -33,5 +33,6 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# emplacement du modèle
-MODEL_DIR = BASE_DIR / "ml_models" / "income"
+# emplacement des modèles (un sous-dossier par cible : income, jeune…)
+MODEL_ROOT = BASE_DIR / "ml_models"
+MODEL_DIR = MODEL_ROOT / "income"

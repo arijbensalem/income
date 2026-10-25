@@ -49,3 +49,28 @@ code{background:#efe7d6;padding:1px 6px;border-radius:6px;font-size:.9em}
 .gauge-legend{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
 .sentence{margin-top:16px}
 footer{max-width:1080px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:13px}
+/* ---------- page Jeune actif + cartes modèles ---------- */
+.result h3{font:600 14px Inter;margin:18px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.pitch{color:var(--muted);font-size:14px}
+.offers{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.offers li{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+.offers b{color:var(--ink)}
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin:4px 0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:500 13px Inter;cursor:pointer;color:var(--ink)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.benefits{margin-top:48px}
+.benefit-grid,.model-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.benefit,.model{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.benefit>b{display:block;font:700 34px Fraunces,serif;color:var(--accent)}
+.benefit h3,.model h3{margin:6px 0 8px;font-size:18px}
+.benefit p,.model p{margin:0;color:var(--muted);font-size:15px}
+.ethics{margin-top:20px}.ethics ul{margin:0;padding-left:20px;color:var(--muted)}.ethics li{margin:6px 0}
+.models{margin-top:40px}
+.model{text-decoration:none;color:var(--ink);display:block;transition:border-color .2s}
+.model:hover{border-color:var(--accent)}
+.model .go{display:inline-block;margin-top:12px;color:var(--accent);font-weight:600}
+@media(max-width:560px){
+  .top{flex-wrap:wrap;gap:10px}
+  nav{gap:12px;font-size:14px;flex-wrap:wrap}
+  nav .cta{padding:6px 12px}
+}

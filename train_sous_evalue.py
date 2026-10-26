@@ -94,6 +94,26 @@ best_model.fit(X, y)
 joblib.dump(best_model, OUT / "pipeline.joblib")
 
 options = {c: sorted(X[c].unique().tolist()) for c in cat_cols}
+
+# ---------- Recommandations : leviers testés et repères par groupe ----------
+# Leviers = variables sur lesquelles une personne ou un employeur peut agir.
+# On ne garde que les modalités observées chez au moins 100 diplômés (sinon trop de bruit).
+MIN_COUNT = 100
+levers = {c: sorted(X[c].value_counts()[lambda s: s >= MIN_COUNT].index.tolist())
+          for c in ["occupation", "workclass"]}
+
+# Repères = part de sous-évalués observée dans chaque groupe (variables non modifiables).
+age_bins = pd.cut(grad["age"], bins=[0, 25, 35, 45, 55, 120], right=False,
+                  labels=["moins de 25 ans", "25-34 ans", "35-44 ans", "45-54 ans", "55 ans et plus"])
+reperes = {
+    "sex": grad.groupby("sex")["sous_evalue"].mean().round(3).to_dict(),
+    "marital-status": grad.groupby("marital-status")["sous_evalue"].mean().round(3).to_dict(),
+    "age": grad.groupby(age_bins, observed=True)["sous_evalue"].mean().round(3)
+                .rename(index=str).to_dict(),
+    "occupation": grad.groupby("occupation")["sous_evalue"].mean().round(3).to_dict(),
+    "workclass": grad.groupby("workclass")["sous_evalue"].mean().round(3).to_dict(),
+}
+
 (OUT / "config.json").write_text(json.dumps({
     "threshold": best_thr,
     "features": X.columns.tolist(),
@@ -103,5 +123,7 @@ options = {c: sorted(X[c].unique().tolist()) for c in cat_cols}
     "grad_min": GRAD_MIN,
     "model_name": "Gradient Boosting",
     "options": options,
+    "levers": levers,
+    "reperes": reperes,
 }, indent=2, ensure_ascii=False), encoding="utf-8")
 print("Modèle sauvegardé dans", OUT)

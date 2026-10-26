@@ -118,5 +118,74 @@
       "Vietnam",
       "Yugoslavia"
     ]
+  },
+  "levers": {
+    "occupation": [
+      "Adm-clerical",
+      "Craft-repair",
+      "Exec-managerial",
+      "Farming-fishing",
+      "Machine-op-inspct",
+      "Other-service",
+      "Prof-specialty",
+      "Protective-serv",
+      "Sales",
+      "Tech-support",
+      "Transport-moving"
+    ],
+    "workclass": [
+      "Federal-gov",
+      "Local-gov",
+      "Private",
+      "Self-emp-inc",
+      "Self-emp-not-inc",
+      "State-gov"
+    ]
+  },
+  "reperes": {
+    "sex": {
+      "Female": 0.735,
+      "Male": 0.419
+    },
+    "marital-status": {
+      "Divorced": 0.708,
+      "Married-AF-spouse": 0.125,
+      "Married-civ-spouse": 0.273,
+      "Married-spouse-absent": 0.702,
+      "Never-married": 0.856,
+      "Separated": 0.728,
+      "Widowed": 0.704
+    },
+    "age": {
+      "moins de 25 ans": 0.967,
+      "25-34 ans": 0.672,
+      "35-44 ans": 0.429,
+      "45-54 ans": 0.349,
+      "55 ans et plus": 0.423
+    },
+    "occupation": {
+      "Adm-clerical": 0.735,
+      "Armed-Forces": 0.25,
+      "Craft-repair": 0.589,
+      "Exec-managerial": 0.384,
+      "Farming-fishing": 0.724,
+      "Handlers-cleaners": 0.841,
+      "Machine-op-inspct": 0.75,
+      "Other-service": 0.859,
+      "Priv-house-serv": 0.833,
+      "Prof-specialty": 0.492,
+      "Protective-serv": 0.479,
+      "Sales": 0.512,
+      "Tech-support": 0.625,
+      "Transport-moving": 0.713
+    },
+    "workclass": {
+      "Federal-gov": 0.429,
+      "Local-gov": 0.57,
+      "Private": 0.527,
+      "Self-emp-inc": 0.278,
+      "Self-emp-not-inc": 0.493,
+      "State-gov": 0.567
+    }
   }
 }

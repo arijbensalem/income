@@ -5,6 +5,22 @@
 <h1 class="page-title">Diplômé <em>sous-évalué</em>&nbsp;?</h1>
 <p class="lead small">Le modèle concerne uniquement les <strong>diplômés</strong> (Licence ou plus). Un diplômé est dit <strong>sous-évalué</strong> lorsque son revenu annuel reste inférieur ou égal à 50&nbsp;000&nbsp;$. Le niveau d'études et le revenu définissent la cible&nbsp;: ils ne font donc pas partie du formulaire.</p>
 
+<section class="usage">
+  <h2>À qui sert cet outil&nbsp;?</h2>
+  <div class="usage-grid">
+    <article class="card usage-card">
+      <span class="usage-tag">Usage principal</span>
+      <h3>Choisir avant de signer</h3>
+      <p>Un étudiant en fin de master ou de doctorat hésite entre plusieurs offres : privé ou fonction publique, poste technique ou management, temps plein ou partiel. Son futur salaire est encore inconnu. Avec le conseiller du service carrière, il saisit chaque option et compare le risque d'être sous-évalué. Les leviers proposés après le résultat montrent quelle voie, dans les données, va avec un risque plus faible.</p>
+    </article>
+    <article class="card usage-card">
+      <span class="usage-tag">Usage complémentaire</span>
+      <h3>Comprendre les inégalités</h3>
+      <p>Un observatoire de l'emploi ou une direction de l'égalité professionnelle ne regarde pas un individu, mais les facteurs révélés par le modèle. Les femmes diplômées sont sous-évaluées bien plus souvent que les hommes, et l'âge et la situation maritale pèsent fortement : de quoi cibler des actions collectives.</p>
+    </article>
+  </div>
+</section>
+
 <section class="stats compact">
   <div><b>{{ config.rows }}</b><span>diplômés dans le dataset</span></div>
   <div><b>{% widthratio config.rate 1 100 %}&nbsp;%</b><span>sont sous-évalués</span></div>
@@ -39,6 +55,29 @@
     </div>
   </aside>
 </div>
+
+<section id="reco" class="reco" hidden>
+  <h2>Recommandations</h2>
+  <div class="reco-grid">
+    <article class="card">
+      <h3>Action conseillée</h3>
+      <p class="level" id="level"></p>
+      <p id="advice"></p>
+      <p id="equity" class="equity" hidden></p>
+    </article>
+    <article class="card">
+      <h3>Leviers à explorer</h3>
+      <p class="muted small">Le même profil, avec un seul élément modifié, recalculé par le modèle.</p>
+      <ul id="levers" class="levers"></ul>
+    </article>
+    <article class="card">
+      <h3>Repères pour ce profil</h3>
+      <p class="muted small">Part de diplômés sous-évalués dans le dataset, pour les traits qui ne se modifient pas.</p>
+      <ul id="reperes" class="reperes"></ul>
+    </article>
+  </div>
+  <p class="muted small">Ces pistes reposent sur des associations observées dans le recensement américain de 1994, pas sur des liens de cause à effet. Elles servent à orienter un échange avec la personne, pas à décider à sa place.</p>
+</section>
 {% endblock %}
 {% block scripts %}
 <script>
@@ -82,6 +121,51 @@ function show(d) {
   $("mark").style.left = d.threshold + "%";
   $("thr").textContent = "seuil " + d.threshold + " %";
   $("sentence").innerHTML = `Probabilité estimée que ce diplômé gagne 50 000 $ ou moins : <b>${d.probability} %</b>.`;
+  showReco(d);
+}
+
+const LEVELS = {eleve: "Risque élevé", modere: "Risque modéré", faible: "Risque faible"};
+const make = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+
+function showReco(d) {
+  $("reco").hidden = false;
+  $("level").textContent = LEVELS[d.level];
+  $("level").className = `level ${d.level}`;
+  $("advice").textContent = d.advice;
+  $("equity").hidden = !d.equity;
+  $("equity").textContent = d.equity || "";
+
+  const levers = $("levers");
+  levers.replaceChildren();
+  if (!d.under) {
+    levers.append(make("li", "muted", "Aucun levier nécessaire : le risque est déjà sous le seuil."));
+  } else if (!d.levers.length) {
+    levers.append(make("li", "muted", "Aucun changement de profession, de secteur ou de temps de travail ne réduit nettement le risque pour ce profil."));
+  }
+  d.levers.forEach((l) => {
+    const li = make("li");
+    li.append(make("span", "lever-var", l.variable));
+    const change = make("span", "lever-change");
+    change.append(document.createTextNode(`${l.current} → `), make("b", "", l.target));
+    li.append(change);
+    li.append(make("span", "lever-gain", `Risque ${l.probability} % (−${l.gain} points)`));
+    levers.append(li);
+  });
+
+  const reperes = $("reperes");
+  reperes.replaceChildren();
+  d.reperes.forEach((r) => {
+    const li = make("li");
+    li.append(make("span", "", r.label));
+    const bar = make("div", "gauge");
+    const fill = make("div", "bar"); fill.style.width = `${r.rate}%`;
+    if (r.rate > d.mean_rate) fill.style.background = "var(--accent-2)";
+    const mark = make("div", "mark"); mark.style.left = `${d.mean_rate}%`;
+    bar.append(fill, mark);
+    li.append(bar, make("b", "", `${r.rate} %`));
+    reperes.append(li);
+  });
+  reperes.append(make("li", "muted small", `Trait vertical : moyenne de tous les diplômés (${d.mean_rate} %).`));
 }
 </script>
 {% endblock %}

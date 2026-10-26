@@ -30,13 +30,6 @@
   <a class="btn" href="{% url 'sous_evalue' %}">Lancer une prédiction →</a>
 </section>
 
-<section class="stats">
-  <div><b>{{ sous_evalue.rows }}</b><span>diplômés après nettoyage</span></div>
-  <div><b>{{ sous_evalue.metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
-  <div><b>{{ sous_evalue.metrics.accuracy }}</b><span>Accuracy (test)</span></div>
-  <div><b>{{ sous_evalue.features|length }}</b><span>variables d'entrée</span></div>
-</section>
-
 <section class="steps">
   <h2>Sous-évaluation : comment ça marche</h2>
   <ol>
@@ -70,7 +63,7 @@
     <a class="model" href="{% url 'sous_evalue' %}">
       <p class="eyebrow">Cible <code>sous_evalue</code></p>
       <h3>Diplômé sous-évalué</h3>
-      <p>Repère les diplômés dont le revenu reste ≤ 50 000 $. AUC-ROC {{ sous_evalue.metrics.auc_roc }}.</p>
+      <p>Repère les diplômés dont le revenu reste ≤ 50 000 $ malgré leur niveau d'études, et propose des pistes pour réduire ce risque.</p>
       <span class="go">Tester un diplômé →</span>
     </a>
     <a class="model" href="{% url 'occupation' %}">

@@ -21,13 +21,6 @@
   </div>
 </section>
 
-<section class="stats compact">
-  <div><b>{{ config.rows }}</b><span>diplômés dans le dataset</span></div>
-  <div><b>{% widthratio config.rate 1 100 %}&nbsp;%</b><span>sont sous-évalués</span></div>
-  <div><b>{{ config.metrics.auc_roc }}</b><span>AUC-ROC (test)</span></div>
-  <div><b>{{ config.metrics.f1 }}</b><span>F1 (test)</span></div>
-</section>
-
 <div class="grid">
   <form id="sous-evalue-form" class="card" novalidate>
     {% csrf_token %}

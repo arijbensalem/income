@@ -1,0 +1,17 @@
+{% load l10n %}
+<div class="path-chart" role="img" aria-label="Probabilités estimées par le modèle pour les trois familles">
+  {% for row in pathway.evidence %}
+  <div class="path-chart-row" data-family="{{ row.label }}">
+    <div class="path-chart-label">
+      <span class="path-swatch path-swatch--{{ row.label }}"></span>
+      <span>{{ row.label_fr }}</span>
+    </div>
+    <div class="path-chart-track">
+      {% localize off %}
+      <span class="path-chart-fill path-chart-fill--{{ row.label }}" style="width: {{ row.probability }}%"></span>
+      {% endlocalize %}
+    </div>
+    <b>{{ row.text }} %</b>
+  </div>
+  {% endfor %}
+</div>

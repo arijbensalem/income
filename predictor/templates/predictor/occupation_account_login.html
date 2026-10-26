@@ -1,0 +1,24 @@
+{% extends "predictor/base.html" %}
+{% block title %}Connexion profession · Atelier ML{% endblock %}
+{% block content %}
+<section class="auth card path-auth">
+  <p class="eyebrow">Profession</p>
+  <h1>Connexion profession</h1>
+  <p class="path-auth-lead">Ce compte est <strong>séparé</strong> de la connexion générale du site. Même si vous êtes déjà connecté ailleurs, vous devez vous inscrire et vous connecter ici pour accéder à « Trouver mon parcours ».</p>
+  {% if site_user %}
+  <p class="path-auth-note">Connecté au site en tant que <b>{{ site_user.username }}</b> — cela ne suffit pas pour la profession.</p>
+  {% endif %}
+  {% if form.non_field_errors %}
+    <div class="err-box">{{ form.non_field_errors|join:" " }}</div>
+  {% endif %}
+  <form method="post" action="{% url 'occupation_login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="field"><span>{{ form.username.label }}</span>{{ form.username }}</label>
+    <label class="field"><span>{{ form.password.label }}</span>{{ form.password }}</label>
+    <button class="btn" type="submit">Se connecter à la profession</button>
+  </form>
+  <p class="auth-alt">Pas encore de compte profession ? <a href="{% url 'occupation_register' %}?next={{ next|urlencode }}">Créer un compte profession</a></p>
+  <p class="auth-alt"><a href="{% url 'login' %}">Connexion générale du site</a></p>
+</section>
+{% endblock %}

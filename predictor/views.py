@@ -7,10 +7,11 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
-from .forms import (HoursForm, IncomeForm, JeuneForm, MarriedForm, OccupationForm,
+from .forms import (HoursForm, IncomeForm, JeuneForm, MarriedForm,
                     RelationshipForm, SousEvalueForm)
 from .ml import (load, load_hours, load_sous_evalue, predict_hours, predict_income,
-                 predict_jeune, predict_occupation, predict_relationship, predict_sous_evalue)
+                 predict_jeune, predict_relationship, predict_sous_evalue)
+from .occupation_path import occupation_page, occupation_sheet
 
 
 def home(request):
@@ -190,23 +191,6 @@ def hours_api(request):
         return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
     return JsonResponse({"ok": True, **predict_hours(form.model_input())})
 
-# ----------------------------------------------------------------------
-# PROFESSION (occupation)
-# ----------------------------------------------------------------------
-def occupation_page(request):
-    return render(request, "predictor/occupation.html", {"form": OccupationForm()})
-
-
-@require_POST
-def occupation_api(request):
-    """Reçoit le formulaire et renvoie la famille professionnelle la plus probable."""
-    payload, error = _read_payload(request)
-    if error:
-        return error
-    form = OccupationForm(payload)
-    if not form.is_valid():
-        return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
-    return JsonResponse({"ok": True, **predict_occupation(form.model_input())})
 # ----------------------------------------------------------------------
 # RELATION FAMILIALE (relationship, CatBoost)
 # ----------------------------------------------------------------------

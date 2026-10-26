@@ -1,0 +1,96 @@
+{% extends "predictor/base.html" %}
+{% block title %}Ma voie recommandée · Atelier ML{% endblock %}
+{% block content %}
+<style>
+  @page { size: A4; margin: 12mm; }
+  @media print {
+    .top, footer, .no-print, .occ-nav, .btn, .path-actions { display: none !important; }
+    body { background: #fff; }
+    main { max-width: none; padding: 0; }
+    .path-sheet { border: 0; box-shadow: none; padding: 0; }
+    .path-sheet h1 { font-size: 22px; margin: 0 0 8px; }
+    .path-sheet h2, .path-sheet h3 { font-size: 15px; margin: 8px 0 4px; }
+    .path-sheet p, .path-sheet li, .path-sheet td, .path-sheet th, .path-chip { font-size: 11px; }
+    .path-card, .path-alert, .path-chart-panel, .card { break-inside: avoid; }
+    .path-meter-fill, .path-chart-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+<section class="occ path path-sheet">
+  {% include "predictor/occupation_nav.html" %}
+  <header class="path-hero">
+    <p class="eyebrow no-print">Profession</p>
+    <h1 class="page-title">Ma voie <em>recommandée</em></h1>
+    <p class="path-actions no-print">
+      <button class="btn path-print-btn" type="button" onclick="window.print()">{% include "predictor/path_icon.html" with name="print" %} Imprimer / Enregistrer en PDF</button>
+      <a class="back" href="{% url 'occupation' %}">Modifier le profil</a>
+    </p>
+    <p>Cette fiche reprend les pistes déjà calculées. Elle n'est pas recalculée à l'ouverture.</p>
+  </header>
+
+  <div class="path-summary">
+    <div class="path-summary-item path-summary-item--goal">
+      <span>Objectif</span>
+      <b>{{ pathway.goal_label }}</b>
+    </div>
+    <div class="path-summary-item">
+      <span>Études</span>
+      <b>{{ pathway.education_label }}</b>
+    </div>
+    <div class="path-summary-item">
+      <span>Revenu (modèle)</span>
+      <b>{{ pathway.income_label }}</b>
+    </div>
+    <div class="path-summary-item path-summary-item--model">
+      <span>Indice modèle le plus élevé</span>
+      <b>{{ pathway.model_top }} · {{ pathway.model_top_probability }} %</b>
+    </div>
+  </div>
+
+  {% if pathway.interest_labels %}
+  <div class="path-chip-row path-chip-row--page">
+    {% for item in pathway.interest_labels %}<span class="path-chip">{{ item }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if pathway.note %}<p class="path-note-display">« {{ pathway.note }} »</p>{% endif %}
+
+  <section class="path-chart-panel">
+    <h2>{% include "predictor/path_icon.html" with name="chart" %} Indice du modèle historique</h2>
+    <p class="path-hint">Probabilités estimées pour ce profil. Elles ne décident pas seules la shortlist et ne sont pas des parts de la population recensée.</p>
+    {% include "predictor/path_evidence_chart.html" %}
+  </section>
+
+  <section class="path-card-list">
+    <h2 class="path-section-title">Directions recommandées</h2>
+    {% for direction in pathway.directions %}
+      {% include "predictor/path_direction_card.html" %}
+    {% endfor %}
+    <p class="path-alert-note">{{ pathway.family_note }}</p>
+  </section>
+
+  <section class="card">
+    <h2>Profil transmis au modèle</h2>
+    <dl class="path-profile">
+      {% for row in pathway.profile %}
+      <div>
+        <dt>{{ row.label }}</dt>
+        <dd>{{ row.display }}{% if row.display != row.model_value %} <small>({{ row.model_value }})</small>{% endif %}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <aside class="path-alert">
+    <div class="path-alert-icon">{% include "predictor/path_icon.html" with name="warning" %}</div>
+    <div>
+      <h2>Limites</h2>
+      <ul class="path-alert-list">
+        <li>Recensement américain ~1994</li>
+        <li>Pas le marché du travail tunisien d'aujourd'hui</li>
+        <li>Ni offres d'emploi, ni conseils garantis, ni établissement nommé</li>
+        <li>Services reconnus ~{{ pathway.service_recall }} % en évaluation tenue à l'écart</li>
+        <li>La couche de parcours propose des types de formations à investiguer, pas un placement</li>
+      </ul>
+    </div>
+  </aside>
+</section>
+{% endblock %}

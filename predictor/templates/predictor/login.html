@@ -2,8 +2,9 @@
 {% block title %}Connexion · Atelier ML{% endblock %}
 {% block content %}
 <section class="auth card">
-  <p class="eyebrow">Accès réservé</p>
-  <h1>Connexion</h1>
+  <p class="eyebrow">Site</p>
+  <h1>Connexion générale</h1>
+  <p class="path-auth-lead">Cette page ouvre l'accès à l'accueil. Chaque modèle (revenu, profession, etc.) a aussi sa propre page de connexion.</p>
   {% if form.non_field_errors %}
     <div class="err-box">{{ form.non_field_errors|join:" " }}</div>
   {% endif %}

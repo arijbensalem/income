@@ -1,0 +1,54 @@
+{% load l10n %}
+<article class="path-card path-card--{{ direction.label }}" data-family="{{ direction.label }}">
+  <header class="path-card-head">
+    <span class="path-card-rank">{{ forloop.counter }}</span>
+    <div>
+      <p class="path-card-kicker">Direction recommandée</p>
+      <h3>{{ direction.label_fr }}</h3>
+    </div>
+    <div class="path-card-score" aria-label="Indice du modèle {{ direction.model_probability_text }} pour cent">
+      <b>{{ direction.model_probability_text }}%</b>
+      <span>indice modèle</span>
+    </div>
+  </header>
+
+  <div class="path-meter" role="img" aria-label="Probabilité estimée {{ direction.model_probability_text }} pour cent">
+    {% localize off %}
+    <span class="path-meter-fill path-meter-fill--{{ direction.label }}" style="width: {{ direction.model_probability }}%"></span>
+    {% endlocalize %}
+  </div>
+
+  {% if direction.matched_interests %}
+  <div class="path-chip-row">
+    {% for item in direction.matched_interests %}
+    <span class="path-chip">{{ item }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="path-card-why">{{ direction.why }}</p>
+
+  <div class="path-card-grid">
+    <div>
+      <h4>{% include "predictor/path_icon.html" with name="train" %} Métiers d'exemple</h4>
+      <div class="path-chip-row">
+        {% for item in direction.examples %}
+        <span class="path-chip path-chip--soft">{{ item }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <h4>{% include "predictor/path_icon.html" with name="chart" %} Études ou formations à investiguer</h4>
+      <ul class="path-mini-list">
+        {% for item in direction.training %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="path-card-steps">
+    <h4>{% include "predictor/path_icon.html" with name="steps" %} Prochaines étapes</h4>
+    <ol class="path-step-list">
+      {% for item in direction.next_steps %}<li>{{ item }}</li>{% endfor %}
+    </ol>
+  </div>
+</article>

@@ -285,12 +285,39 @@ class OccupationForm(forms.Form):
             "income": "income",
         }
         income_labels = {"<=50K": "≤ 50 000 $", ">50K": "> 50 000 $"}
+        country_labels = {
+            "United-States": "États-Unis", "Cambodia": "Cambodge", "Canada": "Canada", "China": "Chine",
+            "Columbia": "Colombie", "Cuba": "Cuba", "Dominican-Republic": "République Dominicaine",
+            "Ecuador": "Équateur", "El-Salvador": "El Salvador", "England": "Angleterre",
+            "France": "France", "Germany": "Allemagne", "Greece": "Grèce", "Guatemala": "Guatemala",
+            "Haiti": "Haïti", "Hong": "Hong Kong", "Hungary": "Hongrie", "India": "Inde",
+            "Iran": "Iran", "Ireland": "Irlande", "Italy": "Italie", "Jamaica": "Jamaïque",
+            "Japan": "Japon", "Mexico": "Mexique", "Nicaragua": "Nicaragua", "Poland": "Pologne",
+            "Portugal": "Portugal", "Puerto-Rico": "Porto Rico", "Scotland": "Écosse",
+            "Taiwan": "Taiwan", "Thailand": "Thaïlande", "Trinadad&Tobago": "Trinité-et-Tobago",
+            "Vietnam": "Vietnam",
+        }
+        choice_labels = {
+            "workclass": FR_LABELS["workclass"],
+            "marital-status": FR_LABELS["marital-status"],
+            "relationship": FR_LABELS["relationship"],
+            "sex": {"Male": "Homme", "Female": "Femme"},
+            "race": {
+                "White": "Blanc", "Black": "Noir",
+                "Asian-Pac-Islander": "Asiatique/Îlien du Pacifique",
+                "Amer-Indian-Eskimo": "Amérindien/Esquimau", "Other": "Autre",
+            },
+            "native-country": country_labels,
+            "income": income_labels,
+        }
         for field, key in mapping.items():
-            choices = []
-            for value in opts[key]:
-                label = income_labels.get(value, value.replace("-", " "))
-                choices.append((value, label))
+            labels = choice_labels[key]
+            choices = [
+                (value, labels.get(value, value.replace("-", " ")))
+                for value in opts[key]
+            ]
             self.fields[field].choices = [("", "Choisir…")] + choices
+        self.fields["education_num"].choices = [("", "Choisir…")] + list(EDUCATION)
         for f in self.fields.values():
             f.widget.attrs["class"] = "input"
 

@@ -34,8 +34,11 @@ def register(request):
     if request.user.is_authenticated:
         return redirect("home")
     form = RegisterForm(request.POST or None)
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
+        if next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
         return redirect("home")
-    return render(request, "predictor/register.html", {"form": form})
+    return render(request, "predictor/register.html", {"form": form, "next": next_url})

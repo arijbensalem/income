@@ -6,6 +6,7 @@
   <h1>Créer un compte</h1>
   <form method="post">
     {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     <label class="field"><span>{{ form.username.label }}</span>{{ form.username }}
       <div class="err">{{ form.username.errors|join:" " }}</div></label>
     <label class="field"><span>{{ form.password1.label }}</span>{{ form.password1 }}

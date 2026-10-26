@@ -1,0 +1,21 @@
+{% extends "predictor/base.html" %}
+{% block title %}Connexion {{ area_title }} · Atelier ML{% endblock %}
+{% block content %}
+<section class="auth card path-auth">
+  <p class="eyebrow">{{ area_label }}</p>
+  <h1>Connexion — {{ area_title }}</h1>
+  <p class="path-auth-lead">{{ area_lead }}</p>
+  {% if form.non_field_errors %}
+    <div class="err-box">{{ form.non_field_errors|join:" " }}</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="field"><span>{{ form.username.label }}</span>{{ form.username }}</label>
+    <label class="field"><span>{{ form.password.label }}</span>{{ form.password }}</label>
+    <button class="btn" type="submit">Se connecter pour continuer</button>
+  </form>
+  <p class="auth-alt">Pas encore de compte ? <a href="{% url 'register' %}?next={{ next|urlencode }}">Créer un compte</a></p>
+  <p class="auth-alt"><a href="{% url 'login' %}">Connexion générale du site</a></p>
+</section>
+{% endblock %}

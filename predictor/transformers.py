@@ -60,9 +60,9 @@ COLLAR_GROUPS = {
 }
 
 LABELS_FR = {
-    "White-collar": "Col blanc",
-    "Blue-collar": "Col bleu",
-    "Service": "Services",
+    "White-collar": "Métiers de bureau et d'encadrement",
+    "Blue-collar": "Métiers techniques et manuels",
+    "Service": "Métiers du commerce et des services",
 }
 
 

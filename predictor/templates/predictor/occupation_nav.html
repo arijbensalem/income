@@ -1,0 +1,13 @@
+<nav class="occ-nav no-print" aria-label="Pages profession">
+  <a href="{% url 'occupation' %}" {% if page == "explorer" %}aria-current="page"{% endif %}>Trouver mon parcours</a>
+  <a href="{% url 'occupation_sheet' %}" {% if page == "fiche" %}aria-current="page"{% endif %}>Ma voie recommandée</a>
+  {% if occupation_account %}
+  <form method="post" action="{% url 'occupation_logout' %}" class="occ-auth-logout">
+    {% csrf_token %}
+    <button type="submit" class="occ-auth-btn">Déconnexion profession ({{ occupation_account.username }})</button>
+  </form>
+  {% else %}
+  <a class="occ-auth-link" href="{% url 'occupation_login' %}?next={% url 'occupation' %}">Connexion profession</a>
+  <a class="occ-auth-link" href="{% url 'occupation_register' %}?next={% url 'occupation' %}">Inscription profession</a>
+  {% endif %}
+</nav>

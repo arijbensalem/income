@@ -1,0 +1,25 @@
+{% extends "predictor/base.html" %}
+{% block title %}Inscription profession · Atelier ML{% endblock %}
+{% block content %}
+<section class="auth card path-auth">
+  <p class="eyebrow">Profession</p>
+  <h1>Créer un compte profession</h1>
+  <p class="path-auth-lead">Ce compte ne sert qu'au parcours profession. Il est distinct du compte général du site.</p>
+  {% if site_user %}
+  <p class="path-auth-note">Votre compte site (<b>{{ site_user.username }}</b>) reste séparé : créez ici un identifiant profession.</p>
+  {% endif %}
+  <form method="post" action="{% url 'occupation_register' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="field"><span>{{ form.username.label }}</span>{{ form.username }}
+      <div class="err">{{ form.username.errors|join:" " }}</div></label>
+    <label class="field"><span>{{ form.password1.label }}</span>{{ form.password1 }}
+      <div class="err">{{ form.password1.errors|join:" " }}</div></label>
+    <label class="field"><span>{{ form.password2.label }}</span>{{ form.password2 }}
+      <div class="err">{{ form.password2.errors|join:" " }}</div></label>
+    <p class="auth-alt">8 caractères minimum.</p>
+    <button class="btn" type="submit">Créer mon compte profession</button>
+  </form>
+  <p class="auth-alt">Déjà un compte profession ? <a href="{% url 'occupation_login' %}?next={{ next|urlencode }}">Se connecter</a></p>
+</section>
+{% endblock %}

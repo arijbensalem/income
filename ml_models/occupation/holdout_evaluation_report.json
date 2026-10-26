@@ -1,0 +1,133 @@
+{
+  "artifact": "holdout_evaluation_report",
+  "production_model_unchanged": true,
+  "evaluation_model": "temporary, fit only on the training split, not saved",
+  "method": {
+    "estimator": "HistGradientBoostingClassifier",
+    "hyperparameters": {
+      "max_iter": 400,
+      "learning_rate": 0.06,
+      "max_depth": 6,
+      "min_samples_leaf": 30,
+      "random_state": 42
+    },
+    "split": "sklearn.model_selection.train_test_split",
+    "test_size": 0.2,
+    "stratify": true,
+    "random_state": 42,
+    "preprocessing": [
+      "read data/adult_clean.csv",
+      "drop rows with any missing value",
+      "drop duplicate rows",
+      "exclude occupation == Armed-Forces",
+      "map the remaining 13 titles to White-collar, Blue-collar, Service",
+      "OccupationFeatures inside the pipeline: log1p capital, rare countries (count < 100 on the training split only) to Other, age bins, hours bins, capital flags, education x hours, United-States flag",
+      "one-hot encode categorical engineered columns with handle_unknown=ignore",
+      "standard-scale numeric engineered columns"
+    ],
+    "features": [
+      "age",
+      "workclass",
+      "education-num",
+      "marital-status",
+      "relationship",
+      "race",
+      "sex",
+      "capital-gain",
+      "capital-loss",
+      "hours-per-week",
+      "native-country",
+      "income"
+    ],
+    "class_order": [
+      "White-collar",
+      "Blue-collar",
+      "Service"
+    ],
+    "class_order_meaning": "confusion matrix rows are actual labels and columns are predicted labels, in class_order"
+  },
+  "population_rows": 45161,
+  "train_rows": 36128,
+  "test_rows": 9033,
+  "train_class_counts": {
+    "White-collar": 19472,
+    "Blue-collar": 11848,
+    "Service": 4808
+  },
+  "test_class_counts": {
+    "White-collar": 4868,
+    "Blue-collar": 2963,
+    "Service": 1202
+  },
+  "accuracy": 0.7,
+  "accuracy_full": 0.6995461087124987,
+  "macro_f1": 0.568,
+  "macro_f1_full": 0.5681505334490017,
+  "confusion_matrix": {
+    "labels": [
+      "White-collar",
+      "Blue-collar",
+      "Service"
+    ],
+    "labels_fr": [
+      "Col blanc",
+      "Col bleu",
+      "Services"
+    ],
+    "matrix": [
+      [
+        3955,
+        815,
+        98
+      ],
+      [
+        697,
+        2175,
+        91
+      ],
+      [
+        609,
+        404,
+        189
+      ]
+    ]
+  },
+  "per_class": [
+    {
+      "label": "White-collar",
+      "label_fr": "Col blanc",
+      "precision": 0.7518,
+      "recall": 0.8124,
+      "f1": 0.7809,
+      "support": 4868
+    },
+    {
+      "label": "Blue-collar",
+      "label_fr": "Col bleu",
+      "precision": 0.6408,
+      "recall": 0.7341,
+      "f1": 0.6843,
+      "support": 2963
+    },
+    {
+      "label": "Service",
+      "label_fr": "Services",
+      "precision": 0.5,
+      "recall": 0.1572,
+      "f1": 0.2392,
+      "support": 1202
+    }
+  ],
+  "comparison_with_recorded_metrics": {
+    "recorded_in_config_json": {
+      "accuracy": 0.7,
+      "macro_f1": 0.568
+    },
+    "reproduced_rounded_to_3_decimals": {
+      "accuracy": 0.7,
+      "macro_f1": 0.568
+    },
+    "accuracy_matches": true,
+    "macro_f1_matches": true
+  }
+}

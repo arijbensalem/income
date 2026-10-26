@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import jeune_tools, views
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/married/", views.married_api, name="married_api"),
     path("jeune-actif/", views.jeune_page, name="jeune"),
     path("api/jeune/", views.jeune_api, name="jeune_api"),
+    path("api/jeune/explain/", jeune_tools.explain_api, name="jeune_explain_api"),
     path("diplomes-sous-evalues/", views.sous_evalue_page, name="sous_evalue"),
     path("api/sous-evalue/", views.sous_evalue_api, name="sous_evalue_api"),
     path("prediction-profession/", views.occupation_page, name="occupation"),

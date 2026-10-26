@@ -14,7 +14,7 @@
     <nav>
       {% if user.is_authenticated %}
       <a href="{% url 'home' %}">Accueil</a>
-      <a href="{% url 'jeune' %}">Jeune actif</a>
+      <a href="{% url 'jeune' %}" class="cta">Jeune actif</a>
       <a href="{% url 'income' %}" class="cta">Prédire un revenu</a>
       <a href="{% url 'married' %}" class="cta">Prédire le statut marital</a>
       <a href="{% url 'sous_evalue' %}" class="cta">Diplômé sous-évalué&nbsp;?</a>

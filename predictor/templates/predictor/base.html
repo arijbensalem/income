@@ -12,6 +12,7 @@
   <header class="top">
     <a class="brand" href="{% url 'home' %}"><span class="dot"></span>Atelier&nbsp;ML</a>
     <nav>
+      {% if user.is_authenticated %}
       <a href="{% url 'home' %}">Accueil</a>
       <a href="{% url 'jeune' %}">Jeune actif</a>
       <a href="{% url 'income' %}" class="cta">Prédire un revenu</a>
@@ -20,6 +21,14 @@
       <a href="{% url 'hours' %}" class="cta">Temps de travail</a>
       <a href="{% url 'occupation' %}" class="cta">Profession</a>
       <a href="{% url 'relationship' %}" class="cta">Relation familiale</a>
+      <form method="post" action="{% url 'logout' %}" class="logout">
+        {% csrf_token %}
+        <button type="submit" class="link-btn">Déconnexion ({{ user.username }})</button>
+      </form>
+      {% else %}
+      <a href="{% url 'login' %}">Connexion</a>
+      <a href="{% url 'register' %}" class="cta">Créer un compte</a>
+      {% endif %}
     </nav>
   </header>
   <main>{% block content %}{% endblock %}</main>

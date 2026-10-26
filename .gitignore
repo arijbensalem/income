@@ -4,3 +4,4 @@ __pycache__/
 staticfiles/
 .env
 .vscode/
+db.sqlite3

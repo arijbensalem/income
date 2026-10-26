@@ -1,0 +1,20 @@
+{% extends "predictor/base.html" %}
+{% block title %}Créer un compte · Atelier ML{% endblock %}
+{% block content %}
+<section class="auth card">
+  <p class="eyebrow">Nouveau compte</p>
+  <h1>Créer un compte</h1>
+  <form method="post">
+    {% csrf_token %}
+    <label class="field"><span>{{ form.username.label }}</span>{{ form.username }}
+      <div class="err">{{ form.username.errors|join:" " }}</div></label>
+    <label class="field"><span>{{ form.password1.label }}</span>{{ form.password1 }}
+      <div class="err">{{ form.password1.errors|join:" " }}</div></label>
+    <label class="field"><span>{{ form.password2.label }}</span>{{ form.password2 }}
+      <div class="err">{{ form.password2.errors|join:" " }}</div></label>
+    <p class="auth-alt">8 caractères minimum, pas uniquement des chiffres.</p>
+    <button class="btn" type="submit">Créer mon compte</button>
+  </form>
+  <p class="auth-alt">Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a></p>
+</section>
+{% endblock %}

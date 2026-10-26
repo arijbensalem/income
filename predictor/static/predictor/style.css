@@ -97,3 +97,14 @@ nav{flex-wrap:wrap;justify-content:flex-end}
 .glossary-card li{margin-bottom:6px}
 .glossary-card li b{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:#efe7d6;padding:1px 5px;border-radius:5px}
 .probs{margin-top:4px}
+/* ---------- authentification ---------- */
+.auth{max-width:440px;margin:40px auto}
+.auth h1{font-size:34px;margin:6px 0 18px}
+.auth .field{display:block;margin-bottom:14px}
+.auth .btn{width:100%}
+.auth-alt{margin-top:16px;color:var(--muted);font-size:14px}
+.auth-alt a{color:var(--accent)}
+.err-box{background:#f8e1da;color:var(--accent-2);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:14px}
+.logout{margin:0}
+.link-btn{background:none;border:0;padding:0;font:500 16px Inter,system-ui,sans-serif;color:var(--muted);cursor:pointer}
+.link-btn:hover{color:var(--accent-2)}

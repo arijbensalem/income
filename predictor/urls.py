@@ -38,9 +38,15 @@ urlpatterns = [
     path("prediction-profession/inscription/", occupation_register, name="occupation_register"),
     path("prediction-profession/deconnexion/", occupation_logout, name="occupation_logout"),
 
-    path("prediction-relation/", require_model_login("relationship")(views.relationship_page), name="relationship"),
-    path("api/relationship/", require_model_login("relationship")(views.relationship_api), name="relationship_api"),
-    path("prediction-relation/connexion/", model_login("relationship"), name="relationship_login"),
+    path("prediction-relation/", views.relationship_page, name="relationship"),
+    path("relation-familiale/login/", views.relationship_login, name="relationship_login"),
+    path("relation-familiale/register/", views.relationship_register, name="relationship_register"),
+    path("relation-familiale/logout/", views.relationship_logout, name="relationship_logout"),
+    path("api/relationship/", views.relationship_api, name="relationship_api"),
+    path("api/relationship/history/", views.relationship_history_api, name="relationship_history_api"),
+    path("api/relationship/analytics/", views.relationship_analytics_api, name="relationship_analytics_api"),
+    path("api/relationship/batch/", views.relationship_batch_api, name="relationship_batch_api"),
+    path("api/relationship/pdf/", views.relationship_pdf_api, name="relationship_pdf_api"),
 
     path("login/", login_not_required(auth_views.LoginView.as_view(
         template_name="predictor/login.html",

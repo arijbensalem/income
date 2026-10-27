@@ -1,0 +1,54 @@
+{% extends "predictor/base.html" %}
+{% block title %}S'inscrire - Relation Familiale{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'relationship_login' %}">← Retour</a>
+
+<div style="max-width: 400px; margin: 60px auto; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <h1 style="text-align: center; margin: 0 0 8px 0; font-size: 22px; color: #0f6b5c;">Relation Familiale</h1>
+  <p style="text-align: center; color: var(--muted); margin: 0 0 30px 0; font-size: 13px;">Créer un compte agent bancaire</p>
+  
+  <form method="post" novalidate>
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+      <div style="background: #fee; border: 1px solid #f88; color: #c33; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+        {% for error in form.non_field_errors %}
+          <p style="margin: 0;">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <div style="margin-bottom: 16px;">
+      <label for="{{ form.username.id_for_label }}" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">{{ form.username.label }}</label>
+      {{ form.username }}
+      {% if form.username.errors %}
+        <small style="color: #c33; display: block; margin-top: 4px;">{{ form.username.errors.0 }}</small>
+      {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label for="{{ form.password1.id_for_label }}" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">{{ form.password1.label }}</label>
+      {{ form.password1 }}
+      {% if form.password1.errors %}
+        <small style="color: #c33; display: block; margin-top: 4px;">{{ form.password1.errors.0 }}</small>
+      {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 24px;">
+      <label for="{{ form.password2.id_for_label }}" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">{{ form.password2.label }}</label>
+      {{ form.password2 }}
+      {% if form.password2.errors %}
+        <small style="color: #c33; display: block; margin-top: 4px;">{{ form.password2.errors.0 }}</small>
+      {% endif %}
+    </div>
+    
+    <button type="submit" class="btn" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600; margin-bottom: 16px;">S'inscrire</button>
+  </form>
+  
+  <hr style="border: none; border-top: 1px solid var(--line); margin: 20px 0;">
+  
+  <p style="text-align: center; color: var(--muted); font-size: 13px; margin: 0;">
+    Déjà inscrit ? <a href="{% url 'relationship_login' %}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Se connecter</a>
+  </p>
+</div>
+{% endblock %}

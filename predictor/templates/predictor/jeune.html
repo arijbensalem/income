@@ -1,143 +1,477 @@
 {% extends "predictor/base.html" %}
+{% load static %}
 {% block title %}Ciblage Jeune Actif · Atelier ML{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'predictor/jeune.css' %}">
+<div class="jx">
 <a class="back" href="{% url 'home' %}">← Accueil</a>
-<p class="eyebrow">Banque &amp; assurance · Ciblage marketing</p>
-<h1 class="page-title">Ce client est-il un <em>jeune actif</em>&nbsp;?</h1>
-<p class="lead small">Dans beaucoup de fichiers clients, l'âge est inconnu. À partir de 7 informations simples sur sa situation professionnelle, le modèle repère les profils <b>jeunes actifs (moins de 30 ans)</b> et indique quelles offres bancaires et d'assurance leur proposer.</p>
 
-<div class="grid">
-  <form id="jeune-form" class="card" novalidate>
-    {% csrf_token %}
-    <h2>Profil du client</h2>
-    <div class="fields">
-      {% for field in form %}
-      <label class="field">
-        <span>{{ field.label }}</span>
-        {{ field }}
-        <small class="err" data-err="{{ field.name }}"></small>
-      </label>
-      {% endfor %}
+  <!-- ================= HERO ================= -->
+  <section class="jx-hero">
+    <span class="jx-tag"><span class="pulse"></span>Espace conseiller · {{ user.username }}</span>
+    <h1>Repérez les <em>jeunes actifs</em> et proposez-leur la bonne offre.</h1>
+    <p class="sub">Sept informations sur la situation du client suffisent : le modèle mesure s'il <b>vit comme un jeune actif</b>, explique pourquoi, choisit les offres bancaires et d'assurance adaptées, et <b>les fait évoluer quand sa vie change</b>.</p>
+    <div class="jx-kpis">
+      <div class="jx-kpi"><b>{{ m.lift }}×</b><span>plus efficace qu'un envoi au hasard</span></div>
+      <div class="jx-kpi"><b>−{{ savings }}&nbsp;%</b><span>de coût par jeune client touché</span></div>
+      <div class="jx-kpi"><b>{% widthratio m.recall 1 100 %}&nbsp;%</b><span>des jeunes actifs retrouvés</span></div>
     </div>
-    <div class="examples">
-      <span>Exemples :</span>
-      <button type="button" class="chip" data-example="jeune">Jeune vendeur</button>
-      <button type="button" class="chip" data-example="confirme">Cadre marié</button>
-    </div>
-    <button id="submit" class="btn" type="submit">Analyser le profil →</button>
-  </form>
+  </section>
 
-  <aside class="card result" id="result" aria-live="polite">
-    <h2>Résultat</h2>
-    <div id="placeholder" class="placeholder">Le segment du client et les offres à lui proposer apparaîtront ici.</div>
-    <div id="output" hidden>
-      <div class="badge" id="badge"></div>
-      <div class="gauge"><div class="bar" id="bar"></div><div class="mark" id="mark"></div></div>
-      <div class="gauge-legend"><span>0 %</span><span id="thr"></span><span>100 %</span></div>
-      <p id="sentence" class="sentence"></p>
-      <p id="pitch" class="pitch"></p>
-      <h3>🏦 Offres banque</h3>
-      <ul class="offers" id="bank"></ul>
-      <h3>🛡️ Offres assurance</h3>
-      <ul class="offers" id="insurance"></ul>
+  <!-- ================= HISTOIRE ================= -->
+  <section class="jx-section" id="histoire">
+    <header>
+      <span class="jx-step">Pourquoi cet outil ?</span>
+      <h2>Un outil qui suit le client toute sa vie : l'histoire de Sami</h2>
+      <p>Sami, 23 ans, vendeur à temps partiel, vit chez ses parents. Voici ce que l'outil change pour sa banque, à chaque moment.</p>
+    </header>
+    <ol class="jx-story">
+      <li class="jx-moment">
+        <span class="when">① Avant qu'il arrive · Campagne</span>
+        <h3>Contacter les bonnes personnes</h3>
+        <p class="without"><b>Sans l'outil</b> Le « Pack Jeune » part par SMS, e-mail et appels à tout le fichier : la plupart des messages arrivent chez des clients non concernés.</p>
+        <p class="with"><b>Avec l'outil</b> Seuls les profils « jeune actif » sont contactés : environ {% widthratio m.precision 1 10 %} sur 10 sont de vrais jeunes actifs, contre {% widthratio m.share_young 1 10 %} sur 10 au hasard.</p>
+        <a class="go" href="#rentabilite">Calculer la rentabilité →</a>
+      </li>
+      <li class="jx-moment">
+        <span class="when">② Premier rendez-vous · Agence</span>
+        <h3>Proposer et expliquer la bonne offre</h3>
+        <p class="without"><b>Sans l'outil</b> Le conseiller choisit au feeling, propose le produit du mois : Sami refuse.</p>
+        <p class="with"><b>Avec l'outil</b> En une seconde : le segment, les offres adaptées et <i>pourquoi</i>. Le conseiller explique, Sami accepte.</p>
+        <button type="button" class="go" data-story="agence">Analyser le profil de Sami →</button>
+      </li>
+      <li class="jx-moment">
+        <span class="when">③ Quatre ans plus tard · Changement de vie</span>
+        <h3>Faire évoluer l'offre avec sa vie</h3>
+        <p class="without"><b>Sans l'outil</b> Sami est marié, à temps plein, dans son propre logement. La banque ne le voit pas et continue les offres jeunes : un concurrent le récupère.</p>
+        <p class="with"><b>Avec l'outil</b> Ses informations sont mises à jour, le profil est recalculé, l'offre bascule vers la famille : la banque garde Sami.</p>
+        <button type="button" class="go" data-story="vie">Simuler sa vie future →</button>
+      </li>
+    </ol>
+
+    <h3 class="jx-subtitle">Ce que la banque y gagne</h3>
+    <div class="jx-gains">
+      <div><i>💰</i><b>Argent</b><span>Ciblage {{ m.lift }}× plus efficace ; −{{ savings }}&nbsp;% de coût par jeune touché quand le contact coûte cher.</span></div>
+      <div><i>⏱️</i><b>Temps</b><span>Les conseillers appellent les bonnes personnes et ont la bonne offre en une seconde.</span></div>
+      <div><i>✅</i><b>Ventes</b><span>Une offre adaptée et expliquée : le client dit plus souvent oui.</span></div>
+      <div><i>🔁</i><b>Fidélité</b><span>L'offre suit sa vie : compte, assurance, épargne, puis crédit immobilier.</span></div>
+      <div><i>🤝</i><b>Image</b><span>Moins de pression commerciale : chacun reçoit ce qui le concerne.</span></div>
+      <div><i>🎓</i><b>Qualité du conseil</b><span>Même un conseiller débutant donne un conseil de qualité.</span></div>
     </div>
-  </aside>
+  </section>
+
+  <nav class="jx-tabs" aria-label="Sections de la page">
+    <a href="#histoire">L'histoire de Sami</a>
+    <a href="#analyse">① Analyse client</a>
+    <a href="#etsi">② Et si… ?</a>
+    <a href="#rentabilite">③ Rentabilité</a>
+    <a href="#confiance">④ Usage responsable</a>
+  </nav>
+
+  <!-- ================= ① ANALYSE ================= -->
+  <section class="jx-section" id="analyse">
+    <header>
+      <span class="jx-step">Étape 1</span>
+      <h2>Analyser un client</h2>
+      <p>Remplissez le profil ou choisissez un exemple. Ensuite, chaque modification met le résultat à jour en direct.</p>
+    </header>
+
+    <div class="jx-grid">
+      <form id="jx-form" class="jx-card" novalidate>
+        {% csrf_token %}
+        <fieldset class="jx-group">
+          <legend>💼 Travail</legend>
+          <div class="jx-fields">
+            <label class="jx-field"><span>{{ form.occupation.label }}</span>{{ form.occupation }}<small class="err" data-err="occupation"></small></label>
+            <label class="jx-field"><span>{{ form.workclass.label }}</span>{{ form.workclass }}<small class="err" data-err="workclass"></small></label>
+            <label class="jx-field"><span>{{ form.hours_per_week.label }}</span>{{ form.hours_per_week }}<small class="err" data-err="hours_per_week"></small></label>
+          </div>
+        </fieldset>
+        <fieldset class="jx-group">
+          <legend>🎓 Formation &amp; revenu</legend>
+          <div class="jx-fields">
+            <label class="jx-field"><span>{{ form.education_num.label }}</span>{{ form.education_num }}<small class="err" data-err="education_num"></small></label>
+            <label class="jx-field"><span>{{ form.income_gt50k.label }}</span>{{ form.income_gt50k }}<small class="err" data-err="income_gt50k"></small></label>
+          </div>
+        </fieldset>
+        <fieldset class="jx-group">
+          <legend>🏠 Vie personnelle</legend>
+          <div class="jx-fields">
+            <label class="jx-field"><span>{{ form.marital_status.label }}</span>{{ form.marital_status }}<small class="err" data-err="marital_status"></small></label>
+            <label class="jx-field"><span>{{ form.relationship.label }}</span>{{ form.relationship }}<small class="err" data-err="relationship"></small></label>
+          </div>
+        </fieldset>
+        <div class="jx-actions">
+          <button id="jx-submit" class="jx-btn" type="submit">Analyser le profil →</button>
+          <span class="jx-hint">Exemples :</span>
+          <button type="button" class="jx-chip" data-example="sami">🎒 Sami, 23 ans</button>
+          <button type="button" class="jx-chip" data-example="jeune_diplome">💻 Jeune diplômé</button>
+          <button type="button" class="jx-chip" data-example="cadre">👔 Cadre marié</button>
+          <span class="jx-live" id="jx-live">Mise à jour en direct</span>
+        </div>
+      </form>
+
+      <aside class="jx-card jx-result" aria-live="polite">
+        <div id="jx-empty" class="jx-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          Le segment du client, l'explication et les offres apparaîtront ici.
+        </div>
+        <div id="jx-out" hidden>
+          <div class="jx-score">
+            <div class="jx-ring" id="jx-ring">
+              <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
+                <circle class="track" cx="66" cy="66" r="56" fill="none" stroke-width="12"/>
+                <circle class="value" id="jx-arc" cx="66" cy="66" r="56" fill="none" stroke-width="12" stroke-linecap="round"
+                        stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+                <g id="jx-tick"><line class="tick" x1="114" y1="66" x2="126" y2="66" stroke-width="2.5"/></g>
+              </svg>
+              <div class="center"><div><b id="jx-pct">0 %</b><small>profil jeune actif</small></div></div>
+            </div>
+            <div>
+              <span class="jx-badge" id="jx-badge"></span>
+              <div class="jx-hint" id="jx-conf" style="margin-top:8px"></div>
+              <div class="jx-delta" id="jx-delta"></div>
+            </div>
+          </div>
+          <p class="jx-pitch" id="jx-pitch"></p>
+
+          <div class="jx-why">
+            <h3>Pourquoi ce résultat ?</h3>
+            <div class="jx-legend"><span>← éloigne du profil jeune</span><span>rapproche →</span></div>
+            <div class="jx-bars" id="jx-why"></div>
+          </div>
+
+          <div class="jx-offers">
+            <h4>🏦 Offres banque à proposer</h4><div id="jx-bank" class="jx-offers"></div>
+            <h4>🛡️ Offres assurance à proposer</h4><div id="jx-ins" class="jx-offers"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= ② ET SI ================= -->
+  <section class="jx-section" id="etsi">
+    <header>
+      <span class="jx-step">Étape 2</span>
+      <h2>Et si sa vie change… ?</h2>
+      <p>Les besoins d'un client évoluent avec les événements de sa vie. Le simulateur montre comment son profil et les offres à lui proposer changeraient.</p>
+    </header>
+    <details class="jx-how">
+      <summary>Comment la banque sait-elle que la vie du client a changé ?</summary>
+      <p>Le modèle ne le devine pas seul : la banque reçoit déjà ces informations, et l'outil est simplement relancé quand elles changent.</p>
+      <ul>
+        <li><b>Mises à jour obligatoires</b> (« connaissance client ») : profession, adresse, situation familiale, revenus.</li>
+        <li><b>Formulaires</b> : demande de crédit, d'assurance ou de carte.</li>
+        <li><b>Changements déclarés</b> : nouvelle adresse, compte joint, changement de nom après mariage.</li>
+        <li><b>Signaux du compte</b> : hausse de salaire, nouvel employeur, loyer mensuel, avec le consentement du client.</li>
+        <li><b>Le rendez-vous</b> : le client dit simplement « je me suis marié ».</li>
+      </ul>
+      <p>Prochaine étape : relier l'outil au système client de la banque, pour qu'une mise à jour déclenche automatiquement une alerte au conseiller.</p>
+    </details>
+    <div id="jx-events-locked" class="jx-locked">Analysez d'abord un client (étape 1) pour simuler les événements de vie.</div>
+    <div id="jx-events" class="jx-events" hidden></div>
+  </section>
+
+  <!-- ================= ③ RENTABILITÉ ================= -->
+  <section class="jx-section" id="rentabilite">
+    <header>
+      <span class="jx-step">Étape 3</span>
+      <h2>Combien votre campagne peut rapporter</h2>
+      <p>Entrez les chiffres de votre établissement et comparez un envoi à tout le fichier client avec un ciblage par le modèle.</p>
+    </header>
+    <div class="jx-roi">
+      <form class="jx-card" id="jx-roi-form" onsubmit="return false">
+        <h3>Vos hypothèses</h3>
+        <div class="jx-fields">
+          <label class="jx-field"><span>Nombre de clients dans le fichier</span><span class="jx-unit"><input class="input" type="number" min="100" step="100" name="n" value="10000"><em>clients</em></span></label>
+          <label class="jx-field"><span>Part de jeunes actifs dans le fichier</span><span class="jx-unit"><input class="input" type="number" min="1" max="90" step="1" name="share" value="{% widthratio m.share_young 1 100 %}"><em>%</em></span></label>
+          <label class="jx-field"><span>Coût d'un contact (appel, courrier, rendez-vous)</span><span class="jx-unit"><input class="input" type="number" min="0" step="0.1" name="cost" value="3"><em>DT</em></span></label>
+          <label class="jx-field"><span>Jeunes contactés qui souscrivent</span><span class="jx-unit"><input class="input" type="number" min="0" max="100" step="0.5" name="conv" value="5"><em>%</em></span></label>
+          <label class="jx-field"><span>Valeur d'un nouveau client jeune (1<sup>re</sup> année)</span><span class="jx-unit"><input class="input" type="number" min="0" step="10" name="value" value="150"><em>DT</em></span></label>
+        </div>
+      </form>
+
+      <div class="jx-card">
+        <h3>Résultat de la campagne</h3>
+        <div class="jx-compare">
+          <div class="jx-scn" id="jx-scn-all"><h4>📢 Envoi à tous</h4><dl></dl></div>
+          <div class="jx-scn" id="jx-scn-mdl"><h4>🎯 Ciblage par le modèle</h4><dl></dl></div>
+        </div>
+        <div class="jx-chart" id="jx-chart"></div>
+        <div class="jx-saving" id="jx-saving"></div>
+        <p class="jx-hint" style="margin-top:10px">Estimation à partir des performances mesurées sur des données de test. Le résultat réel dépend de vos chiffres et de votre fichier client.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ④ CONFIANCE ================= -->
+  <section class="jx-section" id="confiance">
+    <header>
+      <span class="jx-step">Étape 4</span>
+      <h2>Usage responsable</h2>
+    </header>
+    <div class="jx-trust">
+      <div>🎯<b>Marketing uniquement</b><p>L'outil choisit quelle offre montrer. Il ne sert jamais à refuser un crédit, un contrat ou à fixer un prix : l'âge est un critère protégé.</p></div>
+      <div>🛡️<b>Aucune donnée sensible</b><p>Le modèle n'utilise ni le sexe, ni l'origine, ni le pays du client.</p></div>
+      <div>🔍<b>Décisions expliquées</b><p>Chaque résultat montre les réponses qui l'ont influencé : le conseiller garde la main.</p></div>
+      <div>🔄<b>À adapter à votre banque</b><p>Version de démonstration construite sur {{ n_rows }} profils publics, à ré-entraîner sur vos données avant la mise en service.</p></div>
+    </div>
+  </section>
+  <div class="jx-foot"></div>
 </div>
-
-<section class="benefits">
-  <h2>Ce que l'outil apporte à une banque ou un assureur</h2>
-  <div class="benefit-grid">
-    <article class="benefit">
-      <b>{{ m.lift }}×</b>
-      <h3>Cibler les bons clients</h3>
-      <p>Sur <b>1&nbsp;000 clients</b> choisis par le modèle, environ <b>{% widthratio m.precision 1 1000 %}</b> sont de vrais jeunes actifs, contre <b>{% widthratio m.share_young 1 1000 %}</b> en ciblant au hasard.</p>
-    </article>
-    <article class="benefit">
-      <b>−{{ savings }}&nbsp;%</b>
-      <h3>Dépenser moins en marketing</h3>
-      <p>Moins de SMS, e-mails et appels envoyés aux mauvaises personnes : pour le même nombre de jeunes touchés, le coût par jeune client touché baisse d'environ {{ savings }}&nbsp;%.</p>
-    </article>
-    <article class="benefit">
-      <b>{% widthratio m.recall 1 100 %}&nbsp;%</b>
-      <h3>Fidéliser tôt</h3>
-      <p>Le modèle retrouve {% widthratio m.recall 1 100 %}&nbsp;% des jeunes actifs. Un client conquis à 25 ans peut rester des dizaines d'années : compte, épargne, puis crédit immobilier et assurance famille.</p>
-    </article>
-  </div>
-</section>
-
-
-<section class="ethics card">
-  <h2>Usage responsable</h2>
-  <ul>
-    <li>L'outil sert <b>uniquement à choisir quelle offre marketing montrer</b>. Il ne doit jamais servir à refuser un crédit, un contrat ou à fixer un prix : l'âge est un critère protégé.</li>
-    <li>Le modèle n'utilise <b>ni le sexe, ni l'origine, ni le pays</b> du client.</li>
-    <li>Version de démonstration, construite sur {{ n_rows }} profils publics : elle sera ré-entraînée sur les données de votre établissement avant la mise en service.</li>
-  </ul>
-</section>
+{{ m|json_script:"jx-metrics" }}
 {% endblock %}
+
 {% block scripts %}
 <script>
-const form = document.getElementById("jeune-form");
-const $ = id => document.getElementById(id);
+(() => {
+  const $ = id => document.getElementById(id);
+  const form = $("jx-form");
+  const csrf = form.querySelector("[name=csrfmiddlewaretoken]").value;
+  const M = JSON.parse($("jx-metrics").textContent);
+  const fmt = (v, d = 0) => new Intl.NumberFormat("fr-FR", {maximumFractionDigits: d, minimumFractionDigits: d}).format(v);
+  const C = 2 * Math.PI * 56;
+  let last = null;          // dernier résultat affiché
+  let lastPayload = null;   // dernier profil analysé
+  let timer = null;
 
-const EXAMPLES = {
-  jeune:    {occupation: "Sales", workclass: "Private", hours_per_week: 30, education_num: 10,
-             income_gt50k: 0, marital_status: "Never-married", relationship: "Own-child"},
-  confirme: {occupation: "Exec-managerial", workclass: "Private", hours_per_week: 50, education_num: 13,
-             income_gt50k: 1, marital_status: "Married-civ-spouse", relationship: "Husband"},
-};
-document.querySelectorAll("[data-example]").forEach(btn => btn.addEventListener("click", () => {
-  for (const [k, v] of Object.entries(EXAMPLES[btn.dataset.example])) form.elements[k].value = v;
-  form.requestSubmit();
-}));
+  const EXAMPLES = {
+    sami:          {occupation: "Sales", workclass: "Private", hours_per_week: 25, education_num: 10,
+                    income_gt50k: 0, marital_status: "Never-married", relationship: "Own-child"},
+    jeune_diplome: {occupation: "Prof-specialty", workclass: "Private", hours_per_week: 40, education_num: 13,
+                    income_gt50k: 0, marital_status: "Never-married", relationship: "Not-in-family"},
+    cadre:         {occupation: "Exec-managerial", workclass: "Private", hours_per_week: 50, education_num: 13,
+                    income_gt50k: 1, marital_status: "Married-civ-spouse", relationship: "Husband"},
+  };
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  document.querySelectorAll(".err").forEach(el => el.textContent = "");
-  const payload = Object.fromEntries(new FormData(form).entries());
-  $("submit").disabled = true; $("submit").textContent = "Analyse…";
-  try {
-    const res = await fetch("{% url 'jeune_api' %}", {
-      method: "POST",
-      headers: {"Content-Type": "application/json", "X-CSRFToken": payload.csrfmiddlewaretoken},
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!data.ok) {
-      for (const [name, errs] of Object.entries(data.errors)) {
-        const el = document.querySelector(`[data-err="${name}"]`);
-        if (el) el.textContent = errs[0].message;
+  // ---------- appels API ----------
+  const payloadOf = () => {
+    const p = Object.fromEntries(new FormData(form).entries());
+    delete p.csrfmiddlewaretoken;
+    return p;
+  };
+  async function post(url, payload) {
+    const res = await fetch(url, {method: "POST", body: JSON.stringify(payload),
+      headers: {"Content-Type": "application/json", "X-CSRFToken": csrf}});
+    return res.json();
+  }
+
+  // ---------- étape 1 : analyse ----------
+  async function analyze(fromLive = false) {
+    document.querySelectorAll(".err").forEach(el => el.textContent = "");
+    const payload = payloadOf();
+    $("jx-submit").disabled = true;
+    try {
+      const d = await post("{% url 'jeune_explain_api' %}", payload);
+      if (!d.ok) {
+        if (fromLive) return;
+        for (const [name, errs] of Object.entries(d.errors)) {
+          const el = document.querySelector(`[data-err="${name}"]`);
+          if (el) el.textContent = errs[0].message;
+        }
+        return;
       }
-      return;
+      render(d);
+      lastPayload = payload;
+      $("jx-live").classList.add("on");
+      runEvents(payload, d);
+    } catch (e) {
+      if (!fromLive) alert("Erreur de connexion au serveur.");
+    } finally {
+      $("jx-submit").disabled = false;
     }
-    show(data);
-  } catch (err) {
-    alert("Erreur de connexion au serveur.");
-  } finally {
-    $("submit").disabled = false; $("submit").textContent = "Analyser le profil →";
   }
-});
 
-function fill(listId, items) {
-  const ul = $(listId); ul.innerHTML = "";
-  for (const [title, text] of items) {
-    const li = document.createElement("li");
-    const b = document.createElement("b"); b.textContent = title;
-    li.append(b, document.createTextNode(" — " + text));
-    ul.append(li);
+  function render(d) {
+    $("jx-empty").hidden = true; $("jx-out").hidden = false;
+    const ring = $("jx-ring");
+    ring.classList.toggle("low", !d.young);
+    $("jx-out").classList.toggle("low", !d.young);
+    $("jx-arc").style.strokeDashoffset = C * (1 - d.probability / 100);
+    $("jx-tick").setAttribute("transform", `rotate(${d.threshold * 3.6} 66 66)`);
+    $("jx-pct").textContent = fmt(d.probability, 0) + " %";
+    $("jx-badge").textContent = d.segment;
+    $("jx-badge").classList.toggle("low", !d.young);
+    $("jx-conf").textContent = `Confiance ${d.confidence} · profil jeune actif dès ${fmt(d.threshold, 0)} %`;
+    const delta = $("jx-delta");
+    if (last) {
+      const diff = d.probability - last.probability;
+      delta.className = "jx-delta " + (diff >= 0 ? "up" : "down");
+      delta.textContent = Math.abs(diff) < 0.05 ? "" :
+        `${diff > 0 ? "▲ +" : "▼ "}${fmt(diff, 1)} pts depuis la dernière analyse` +
+        (last.young !== d.young ? " · changement d'offre !" : "");
+    }
+    $("jx-pitch").textContent = d.pitch;
+    renderWhy(d.explanation);
+    fillOffers("jx-bank", d.bank, "🏦", "");
+    fillOffers("jx-ins", d.insurance, "🛡️", "ins");
+    last = d;
   }
-}
 
-function show(d) {
-  $("placeholder").hidden = true; $("output").hidden = false;
-  $("output").className = d.young ? "high" : "low";
-  $("badge").textContent = d.segment;
-  $("bar").style.width = d.probability + "%";
-  $("mark").style.left = d.threshold + "%";
-  $("thr").textContent = "jeune actif dès " + d.threshold + " %";
-  $("sentence").innerHTML = `Probabilité « jeune actif » : <b>${d.probability} %</b> · confiance ${d.confidence}.`;
-  $("pitch").textContent = d.pitch;
-  fill("bank", d.bank); fill("insurance", d.insurance);
-}
+  function renderWhy(items) {
+    const max = Math.max(10, ...items.map(i => Math.abs(i.contribution)));
+    const box = $("jx-why"); box.innerHTML = "";
+    for (const it of items) {
+      const w = Math.abs(it.contribution) / max * 50;
+      const row = document.createElement("div"); row.className = "jx-bar";
+      const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = it.label;
+      const axis = document.createElement("div"); axis.className = "axis";
+      const fill = document.createElement("div");
+      fill.className = "fill " + (it.contribution >= 0 ? "pos" : "neg");
+      fill.style.left = it.contribution >= 0 ? "50%" : (50 - w) + "%";
+      fill.style.width = "0%"; requestAnimationFrame(() => fill.style.width = w + "%");
+      axis.append(fill);
+      const num = document.createElement("span"); num.className = "num";
+      num.textContent = (it.contribution > 0 ? "+" : "") + fmt(it.contribution, 1);
+      row.append(lbl, axis, num); box.append(row);
+    }
+  }
+
+  function fillOffers(id, items, ico, cls) {
+    const box = $(id); box.innerHTML = "";
+    for (const [title, text] of items) {
+      const el = document.createElement("div"); el.className = "jx-offer " + cls;
+      const i = document.createElement("i"); i.textContent = ico;
+      const t = document.createElement("div");
+      const b = document.createElement("b"); b.textContent = title;
+      const s = document.createElement("span"); s.textContent = text;
+      t.append(b, s); el.append(i, t); box.append(el);
+    }
+  }
+
+  // ---------- étape 2 : événements de vie ----------
+  const married = p => p.marital_status.startsWith("Married");
+  const EVENTS = [
+    {ico: "🔮", title: "Quatre ans plus tard : marié, à temps plein, dans son propre logement", when: p => !married(p),
+     variants: p => ["Husband", "Wife"].map(rel => ({...p, marital_status: "Married-civ-spouse", relationship: rel,
+                                                     hours_per_week: String(Math.max(40, +p.hours_per_week))}))},
+    {ico: "💍", title: "Se marie", when: p => !married(p),
+     variants: p => [{...p, marital_status: "Married-civ-spouse", relationship: "Husband"},
+                     {...p, marital_status: "Married-civ-spouse", relationship: "Wife"}]},
+    {ico: "🏠", title: "Quitte le domicile parental", when: p => p.relationship === "Own-child",
+     variants: p => [{...p, relationship: "Not-in-family"}]},
+    {ico: "⏱️", title: "Passe à temps plein (40 h)", when: p => +p.hours_per_week < 40,
+     variants: p => [{...p, hours_per_week: "40"}]},
+    {ico: "🎓", title: "Obtient une licence", when: p => +p.education_num < 13,
+     variants: p => [{...p, education_num: "13"}]},
+    {ico: "📈", title: "Dépasse 50 000 $ par an", when: p => p.income_gt50k === "0",
+     variants: p => [{...p, income_gt50k: "1"}]},
+    {ico: "💼", title: "Devient cadre", when: p => p.occupation !== "Exec-managerial",
+     variants: p => [{...p, occupation: "Exec-managerial"}]},
+    {ico: "💔", title: "Divorce", when: married,
+     variants: p => [{...p, marital_status: "Divorced", relationship: "Not-in-family"}]},
+    {ico: "🌗", title: "Passe à temps partiel (25 h)", when: p => +p.hours_per_week >= 35,
+     variants: p => [{...p, hours_per_week: "25"}]},
+    {ico: "📉", title: "Revenu repasse sous 50 000 $", when: p => p.income_gt50k === "1",
+     variants: p => [{...p, income_gt50k: "0"}]},
+    {ico: "🧳", title: "Retourne vivre chez ses parents", when: p => !married(p) && p.relationship !== "Own-child",
+     variants: p => [{...p, relationship: "Own-child"}]},
+  ];
+
+  async function runEvents(p, base) {
+    const list = EVENTS.filter(e => e.when(p)).slice(0, 7);
+    const results = await Promise.all(list.map(async e => {
+      const outs = await Promise.all(e.variants(p).map(v => post("{% url 'jeune_api' %}", v)));
+      const ok = outs.filter(o => o.ok);
+      if (!ok.length) return null;
+      const prob = ok.reduce((s, o) => s + o.probability, 0) / ok.length;
+      return {e, prob, young: prob >= ok[0].threshold, segment: prob >= ok[0].threshold ? ok.find(o => o.young)?.segment ?? ok[0].segment : ok.find(o => !o.young)?.segment ?? ok[0].segment, variant: e.variants(p)[0]};
+    }));
+    const box = $("jx-events"); box.innerHTML = "";
+    $("jx-events-locked").hidden = true; box.hidden = false;
+    for (const r of results.filter(Boolean)) {
+      const diff = r.prob - base.probability;
+      const card = document.createElement("div"); card.className = "jx-event" + (r.young ? "" : " low");
+      card.innerHTML = `<div class="ico"></div><h4></h4>
+        <div class="move"><span class="from"></span><b></b><span class="jx-delta"></span></div>
+        <div class="mini"><span style="width:0"></span></div>
+        <div class="switch"></div><button type="button" class="apply">Appliquer ce scénario →</button>`;
+      card.querySelector(".ico").textContent = r.e.ico;
+      card.querySelector("h4").textContent = r.e.title;
+      card.querySelector(".from").textContent = fmt(base.probability, 0) + " % →";
+      card.querySelector(".move b").textContent = fmt(r.prob, 0) + " %";
+      const dl = card.querySelector(".move .jx-delta");
+      dl.className = "jx-delta " + (diff >= 0 ? "up" : "down");
+      dl.textContent = (diff >= 0 ? "+" : "") + fmt(diff, 0) + " pts";
+      const sw = card.querySelector(".switch");
+      if (r.young !== base.young) {
+        sw.append("Nouvelle offre : ");
+        const b = document.createElement("b"); b.textContent = r.young ? "Pack Jeune Actif" : "Offres Actif confirmé"; sw.append(b);
+      } else sw.textContent = "Même segment, mêmes offres.";
+      card.querySelector(".apply").addEventListener("click", () => {
+        for (const [k, v] of Object.entries(r.variant)) if (form.elements[k]) form.elements[k].value = v;
+        document.getElementById("analyse").scrollIntoView({behavior: "smooth"});
+        analyze();
+      });
+      box.append(card);
+      requestAnimationFrame(() => card.querySelector(".mini span").style.width = r.prob + "%");
+    }
+    if (!box.children.length) box.innerHTML = '<div class="jx-locked">Aucun scénario pertinent pour ce profil.</div>';
+  }
+
+  // ---------- étape 3 : rentabilité ----------
+  // Taux de faux positifs déduit des performances mesurées (rappel, précision, part de jeunes du test)
+  const TPR = M.recall;
+  const FPR = TPR * M.share_young * (1 - M.precision) / (M.precision * (1 - M.share_young));
+  const roiForm = $("jx-roi-form");
+
+  function roi() {
+    const v = Object.fromEntries([...new FormData(roiForm)].map(([k, x]) => [k, Math.max(0, +x || 0)]));
+    const s = Math.min(v.share, 99) / 100, conv = v.conv / 100;
+    const all = {contacts: v.n, young: v.n * s};
+    const mdl = {contacts: v.n * (s * TPR + (1 - s) * FPR), young: v.n * s * TPR};
+    for (const x of [all, mdl]) {
+      x.cost = x.contacts * v.cost; x.clients = x.young * conv;
+      x.revenue = x.clients * v.value; x.net = x.revenue - x.cost;
+      x.cpc = x.clients ? x.cost / x.clients : 0;
+    }
+    const best = mdl.net >= all.net ? "mdl" : "all";
+    for (const [id, x] of [["jx-scn-all", all], ["jx-scn-mdl", mdl]]) {
+      const el = $(id); el.classList.toggle("best", (id === "jx-scn-mdl") === (best === "mdl"));
+      const h = el.querySelector("h4"); h.querySelector("small")?.remove();
+      if (el.classList.contains("best")) { const t = document.createElement("small"); t.textContent = "Meilleur choix"; h.append(t); }
+      el.querySelector("dl").innerHTML = `
+        <dt>Clients contactés</dt><dd>${fmt(x.contacts)}</dd>
+        <dt>Jeunes actifs touchés</dt><dd>${fmt(x.young)}</dd>
+        <dt>Nouveaux clients</dt><dd>${fmt(x.clients)}</dd>
+        <dt>Coût de la campagne</dt><dd>${fmt(x.cost)} DT</dd>
+        <dt>Coût par nouveau client</dt><dd>${fmt(x.cpc)} DT</dd>
+        <div class="net"><span>Résultat net</span><b class="${x.net >= 0 ? "pos" : "neg"}">${x.net >= 0 ? "+" : ""}${fmt(x.net)} DT</b></div>`;
+    }
+    const rows = [["Coût de la campagne", all.cost, mdl.cost, " DT"], ["Nouveaux clients", all.clients, mdl.clients, ""],
+                  ["Coût par nouveau client", all.cpc, mdl.cpc, " DT"]];
+    $("jx-chart").innerHTML = rows.map(([label, a, b, u]) => {
+      const max = Math.max(a, b, 1);
+      return `<div class="row"><span>${label}</span><div class="pair">
+        <div class="b all" style="width:${a / max * 70}%"><em>${fmt(a)}${u}</em></div>
+        <div class="b mdl" style="width:${b / max * 70}%"><em>${fmt(b)}${u}</em></div></div></div>`;
+    }).join("") + `<div class="key"><span><i style="background:#bdb29c"></i>Envoi à tous</span><span><i style="background:var(--jx-navy-2)"></i>Ciblage par le modèle</span></div>`;
+    const saved = all.cost - mdl.cost, gain = mdl.net - all.net;
+    $("jx-saving").innerHTML = gain >= 0
+      ? `<span>Avec le modèle, vous dépensez <b>${fmt(saved)} DT</b> de moins et votre résultat net s'améliore de <b>${fmt(gain)} DT</b>.</span>`
+      : `<span>Avec ces hypothèses, contacter tout le monde rapporte plus (<b>${fmt(-gain)} DT</b>) : chaque contact coûte très peu. Le modèle reste ${fmt(all.cpc ? all.cpc / Math.max(mdl.cpc, 1e-9) : 0, 1)}× moins cher par nouveau client.</span>`;
+  }
+  roiForm.addEventListener("input", roi);
+  roi();
+
+  // ---------- événements ----------
+  form.addEventListener("submit", e => { e.preventDefault(); analyze(); });
+  form.addEventListener("change", () => {
+    if (!lastPayload) return;
+    clearTimeout(timer); timer = setTimeout(() => analyze(true), 300);
+  });
+  const loadExample = key => { for (const [k, v] of Object.entries(EXAMPLES[key])) form.elements[k].value = v; };
+  document.querySelectorAll("[data-example]").forEach(btn => btn.addEventListener("click", () => {
+    loadExample(btn.dataset.example);
+    analyze();
+  }));
+  document.querySelectorAll("[data-story]").forEach(btn => btn.addEventListener("click", async () => {
+    loadExample("sami");
+    const target = btn.dataset.story === "vie" ? "etsi" : "analyse";
+    document.getElementById(target).scrollIntoView({behavior: "smooth"});
+    await analyze();
+  }));
+})();
 </script>
 {% endblock %}

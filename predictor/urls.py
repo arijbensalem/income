@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 
-from . import views
+from . import jeune_tools, views
 from .accounts import StyledAuthenticationForm, register
 from .model_auth import model_login, require_model_login
 from .occupation_auth import occupation_login, occupation_logout, occupation_register
@@ -20,6 +20,7 @@ urlpatterns = [
 
     path("jeune-actif/", require_model_login("jeune")(views.jeune_page), name="jeune"),
     path("api/jeune/", require_model_login("jeune")(views.jeune_api), name="jeune_api"),
+    path("api/jeune/explain/", require_model_login("jeune")(jeune_tools.explain_api), name="jeune_explain_api"),
     path("jeune-actif/connexion/", model_login("jeune"), name="jeune_login"),
 
     path("diplomes-sous-evalues/", require_model_login("sous_evalue")(views.sous_evalue_page), name="sous_evalue"),

@@ -4,6 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'predictor/jeune.css' %}">
 <div class="jx">
+<a class="back" href="{% url 'home' %}">← Accueil</a>
 
   <!-- ================= HERO ================= -->
   <section class="jx-hero">
@@ -445,7 +446,7 @@
       return `<div class="row"><span>${label}</span><div class="pair">
         <div class="b all" style="width:${a / max * 70}%"><em>${fmt(a)}${u}</em></div>
         <div class="b mdl" style="width:${b / max * 70}%"><em>${fmt(b)}${u}</em></div></div></div>`;
-    }).join("") + `<div class="key"><span><i style="background:#9aa8ba"></i>Envoi à tous</span><span><i style="background:var(--jx-navy-2)"></i>Ciblage par le modèle</span></div>`;
+    }).join("") + `<div class="key"><span><i style="background:#bdb29c"></i>Envoi à tous</span><span><i style="background:var(--jx-navy-2)"></i>Ciblage par le modèle</span></div>`;
     const saved = all.cost - mdl.cost, gain = mdl.net - all.net;
     $("jx-saving").innerHTML = gain >= 0
       ? `<span>Avec le modèle, vous dépensez <b>${fmt(saved)} DT</b> de moins et votre résultat net s'améliore de <b>${fmt(gain)} DT</b>.</span>`

@@ -1,0 +1,10 @@
+<details class="tech">
+  <summary>Fiabilité du modèle · informations techniques (équipe projet)</summary>
+  <div class="tech-grid">
+    <div><b>{{ top20.lift|floatformat:1 }}×</b><span>plus efficace qu'un ciblage au hasard (20&nbsp;% de clients contactés)</span></div>
+    <div><b>{% widthratio tiers.premium.precision 1 100 %}&nbsp;%</b><span>de vrais hauts revenus dans le segment Premium</span></div>
+    <div><b>{{ pro.metrics.auc_roc }}</b><span>AUC-ROC : qualité du classement des clients (1 = parfait, 0,5 = hasard)</span></div>
+    <div><b>{{ pro.features|length }}</b><span>variables utilisées, aucune sensible (ni sexe, ni origine, ni pays)</span></div>
+  </div>
+  <p class="note">Chiffres calculés sur {{ pro.n_test }} clients de test que le modèle n'a jamais vus. Le revenu élevé correspond à plus de 50&nbsp;000&nbsp;$ par an (jeu de données Adult, États-Unis, 1994).</p>
+</details>

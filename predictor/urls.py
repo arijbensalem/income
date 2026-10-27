@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_income
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 
@@ -7,8 +7,11 @@ from .accounts import StyledAuthenticationForm, register
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("prediction-revenu/", views.income_page, name="income"),
-    path("api/income/", views.income_api, name="income_api"),
+    path("prediction-revenu/", views_income.income_page, name="income"),
+    path("api/income/", views_income.income_api, name="income_api"),
+    path("ciblage-premium/", views_income.ciblage_page, name="ciblage"),
+    path("api/ciblage/", views_income.ciblage_api, name="ciblage_api"),
+    path("ciblage-premium/modele.csv", views_income.ciblage_modele, name="ciblage_modele"),
     path("married/", views.married_view, name="married"),
     path("api/married/", views.married_api, name="married_api"),
     path("jeune-actif/", views.jeune_page, name="jeune"),

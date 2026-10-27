@@ -9,7 +9,7 @@
   <section class="jx-hero">
     <span class="jx-tag"><span class="pulse"></span>Espace conseiller · {{ user.username }}</span>
     <h1>Repérez les <em>jeunes actifs</em> et proposez-leur la bonne offre.</h1>
-    <p class="sub">Sept informations sur la situation du client suffisent : le modèle mesure s'il <b>vit comme un jeune actif</b>, explique pourquoi, et choisit les offres bancaires et d'assurance adaptées.</p>
+    <p class="sub">Sept informations sur la situation du client suffisent : le modèle mesure s'il <b>vit comme un jeune actif</b>, explique pourquoi, choisit les offres bancaires et d'assurance adaptées, et <b>les fait évoluer quand sa vie change</b>.</p>
     <div class="jx-kpis">
       <div class="jx-kpi"><b>{{ m.lift }}×</b><span>plus efficace qu'un envoi au hasard</span></div>
       <div class="jx-kpi"><b>−{{ savings }}&nbsp;%</b><span>de coût par jeune client touché</span></div>
@@ -17,7 +17,50 @@
     </div>
   </section>
 
+  <!-- ================= HISTOIRE ================= -->
+  <section class="jx-section" id="histoire">
+    <header>
+      <span class="jx-step">Pourquoi cet outil ?</span>
+      <h2>Un outil qui suit le client toute sa vie : l'histoire de Sami</h2>
+      <p>Sami, 23 ans, vendeur à temps partiel, vit chez ses parents. Voici ce que l'outil change pour sa banque, à chaque moment.</p>
+    </header>
+    <ol class="jx-story">
+      <li class="jx-moment">
+        <span class="when">① Avant qu'il arrive · Campagne</span>
+        <h3>Contacter les bonnes personnes</h3>
+        <p class="without"><b>Sans l'outil</b> Le « Pack Jeune » part par SMS, e-mail et appels à tout le fichier : la plupart des messages arrivent chez des clients non concernés.</p>
+        <p class="with"><b>Avec l'outil</b> Seuls les profils « jeune actif » sont contactés : environ {% widthratio m.precision 1 10 %} sur 10 sont de vrais jeunes actifs, contre {% widthratio m.share_young 1 10 %} sur 10 au hasard.</p>
+        <a class="go" href="#rentabilite">Calculer la rentabilité →</a>
+      </li>
+      <li class="jx-moment">
+        <span class="when">② Premier rendez-vous · Agence</span>
+        <h3>Proposer et expliquer la bonne offre</h3>
+        <p class="without"><b>Sans l'outil</b> Le conseiller choisit au feeling, propose le produit du mois : Sami refuse.</p>
+        <p class="with"><b>Avec l'outil</b> En une seconde : le segment, les offres adaptées et <i>pourquoi</i>. Le conseiller explique, Sami accepte.</p>
+        <button type="button" class="go" data-story="agence">Analyser le profil de Sami →</button>
+      </li>
+      <li class="jx-moment">
+        <span class="when">③ Quatre ans plus tard · Changement de vie</span>
+        <h3>Faire évoluer l'offre avec sa vie</h3>
+        <p class="without"><b>Sans l'outil</b> Sami est marié, à temps plein, dans son propre logement. La banque ne le voit pas et continue les offres jeunes : un concurrent le récupère.</p>
+        <p class="with"><b>Avec l'outil</b> Ses informations sont mises à jour, le profil est recalculé, l'offre bascule vers la famille : la banque garde Sami.</p>
+        <button type="button" class="go" data-story="vie">Simuler sa vie future →</button>
+      </li>
+    </ol>
+
+    <h3 class="jx-subtitle">Ce que la banque y gagne</h3>
+    <div class="jx-gains">
+      <div><i>💰</i><b>Argent</b><span>Ciblage {{ m.lift }}× plus efficace ; −{{ savings }}&nbsp;% de coût par jeune touché quand le contact coûte cher.</span></div>
+      <div><i>⏱️</i><b>Temps</b><span>Les conseillers appellent les bonnes personnes et ont la bonne offre en une seconde.</span></div>
+      <div><i>✅</i><b>Ventes</b><span>Une offre adaptée et expliquée : le client dit plus souvent oui.</span></div>
+      <div><i>🔁</i><b>Fidélité</b><span>L'offre suit sa vie : compte, assurance, épargne, puis crédit immobilier.</span></div>
+      <div><i>🤝</i><b>Image</b><span>Moins de pression commerciale : chacun reçoit ce qui le concerne.</span></div>
+      <div><i>🎓</i><b>Qualité du conseil</b><span>Même un conseiller débutant donne un conseil de qualité.</span></div>
+    </div>
+  </section>
+
   <nav class="jx-tabs" aria-label="Sections de la page">
+    <a href="#histoire">L'histoire de Sami</a>
     <a href="#analyse">① Analyse client</a>
     <a href="#etsi">② Et si… ?</a>
     <a href="#rentabilite">③ Rentabilité</a>
@@ -60,7 +103,7 @@
         <div class="jx-actions">
           <button id="jx-submit" class="jx-btn" type="submit">Analyser le profil →</button>
           <span class="jx-hint">Exemples :</span>
-          <button type="button" class="jx-chip" data-example="etudiant">🎒 Jeune vendeur</button>
+          <button type="button" class="jx-chip" data-example="sami">🎒 Sami, 23 ans</button>
           <button type="button" class="jx-chip" data-example="jeune_diplome">💻 Jeune diplômé</button>
           <button type="button" class="jx-chip" data-example="cadre">👔 Cadre marié</button>
           <span class="jx-live" id="jx-live">Mise à jour en direct</span>
@@ -113,6 +156,18 @@
       <h2>Et si sa vie change… ?</h2>
       <p>Les besoins d'un client évoluent avec les événements de sa vie. Le simulateur montre comment son profil et les offres à lui proposer changeraient.</p>
     </header>
+    <details class="jx-how">
+      <summary>Comment la banque sait-elle que la vie du client a changé ?</summary>
+      <p>Le modèle ne le devine pas seul : la banque reçoit déjà ces informations, et l'outil est simplement relancé quand elles changent.</p>
+      <ul>
+        <li><b>Mises à jour obligatoires</b> (« connaissance client ») : profession, adresse, situation familiale, revenus.</li>
+        <li><b>Formulaires</b> : demande de crédit, d'assurance ou de carte.</li>
+        <li><b>Changements déclarés</b> : nouvelle adresse, compte joint, changement de nom après mariage.</li>
+        <li><b>Signaux du compte</b> : hausse de salaire, nouvel employeur, loyer mensuel, avec le consentement du client.</li>
+        <li><b>Le rendez-vous</b> : le client dit simplement « je me suis marié ».</li>
+      </ul>
+      <p>Prochaine étape : relier l'outil au système client de la banque, pour qu'une mise à jour déclenche automatiquement une alerte au conseiller.</p>
+    </details>
     <div id="jx-events-locked" class="jx-locked">Analysez d'abord un client (étape 1) pour simuler les événements de vie.</div>
     <div id="jx-events" class="jx-events" hidden></div>
   </section>
@@ -181,7 +236,7 @@
   let timer = null;
 
   const EXAMPLES = {
-    etudiant:      {occupation: "Sales", workclass: "Private", hours_per_week: 25, education_num: 10,
+    sami:          {occupation: "Sales", workclass: "Private", hours_per_week: 25, education_num: 10,
                     income_gt50k: 0, marital_status: "Never-married", relationship: "Own-child"},
     jeune_diplome: {occupation: "Prof-specialty", workclass: "Private", hours_per_week: 40, education_num: 13,
                     income_gt50k: 0, marital_status: "Never-married", relationship: "Not-in-family"},
@@ -287,6 +342,9 @@
   // ---------- étape 2 : événements de vie ----------
   const married = p => p.marital_status.startsWith("Married");
   const EVENTS = [
+    {ico: "🔮", title: "Quatre ans plus tard : marié, à temps plein, dans son propre logement", when: p => !married(p),
+     variants: p => ["Husband", "Wife"].map(rel => ({...p, marital_status: "Married-civ-spouse", relationship: rel,
+                                                     hours_per_week: String(Math.max(40, +p.hours_per_week))}))},
     {ico: "💍", title: "Se marie", when: p => !married(p),
      variants: p => [{...p, marital_status: "Married-civ-spouse", relationship: "Husband"},
                      {...p, marital_status: "Married-civ-spouse", relationship: "Wife"}]},
@@ -311,7 +369,7 @@
   ];
 
   async function runEvents(p, base) {
-    const list = EVENTS.filter(e => e.when(p)).slice(0, 6);
+    const list = EVENTS.filter(e => e.when(p)).slice(0, 7);
     const results = await Promise.all(list.map(async e => {
       const outs = await Promise.all(e.variants(p).map(v => post("{% url 'jeune_api' %}", v)));
       const ok = outs.filter(o => o.ok);
@@ -402,9 +460,16 @@
     if (!lastPayload) return;
     clearTimeout(timer); timer = setTimeout(() => analyze(true), 300);
   });
+  const loadExample = key => { for (const [k, v] of Object.entries(EXAMPLES[key])) form.elements[k].value = v; };
   document.querySelectorAll("[data-example]").forEach(btn => btn.addEventListener("click", () => {
-    for (const [k, v] of Object.entries(EXAMPLES[btn.dataset.example])) form.elements[k].value = v;
+    loadExample(btn.dataset.example);
     analyze();
+  }));
+  document.querySelectorAll("[data-story]").forEach(btn => btn.addEventListener("click", async () => {
+    loadExample("sami");
+    const target = btn.dataset.story === "vie" ? "etsi" : "analyse";
+    document.getElementById(target).scrollIntoView({behavior: "smooth"});
+    await analyze();
   }));
 })();
 </script>

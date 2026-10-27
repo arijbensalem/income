@@ -1,0 +1,881 @@
+{% extends "predictor/base.html" %}
+{% block title %}Profil familial · Atelier ML{% endblock %}
+{% block content %}
+<style>
+  [hidden]{display:none!important}
+  :root{
+    --mx-r:18px;
+    --mx-sh:0 1px 2px rgba(31,27,16,.04),0 20px 44px -30px rgba(31,27,16,.38);
+    --mx-sh-hi:0 2px 4px rgba(31,27,16,.05),0 30px 56px -28px rgba(31,27,16,.45);
+  }
+  ::selection{background:var(--accent);color:#fff}
+  .mx-hero :focus-visible,.mx-card :focus-visible,.mx-tabs :focus-visible,.mx-actions :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ================= HERO (dark premium panel) ================= */
+  .mx-hero{position:relative;overflow:hidden;background:var(--ink);border-radius:26px;padding:44px 48px 42px;margin:26px 0 26px;color:var(--paper)}
+  .mx-orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none}
+  .mx-orb.a{width:440px;height:440px;right:-130px;top:-170px;background:radial-gradient(circle at 35% 35%,rgba(62,176,126,.48),transparent 66%)}
+  .mx-orb.b{width:380px;height:380px;left:-150px;bottom:-210px;background:radial-gradient(circle at 60% 40%,rgba(226,128,84,.36),transparent 66%)}
+  .mx-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(250,247,240,.09) 1px,transparent 1.4px);background-size:22px 22px;-webkit-mask-image:radial-gradient(ellipse 62% 85% at 74% 12%,#000,transparent 64%);mask-image:radial-gradient(ellipse 62% 85% at 74% 12%,#000,transparent 64%)}
+  .mx-orbits{position:absolute;right:-80px;top:-120px;width:560px;height:auto;pointer-events:none}
+  .mx-orbit-dot{fill:var(--accent)}
+  .mx-hero-in{position:relative;z-index:1;display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+  @media(max-width:1020px){.mx-hero-in{grid-template-columns:1fr;gap:30px}}
+  .mx-chip-live{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 15px;font:600 12.5px Inter,system-ui,sans-serif;letter-spacing:.02em;color:rgba(250,247,240,.92)}
+  .mx-chip-live i{width:8px;height:8px;border-radius:50%;background:var(--accent);position:relative;flex:none}
+  .mx-chip-live i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--accent);opacity:.5;animation:mxPulse 1.9s ease-out infinite}
+  @keyframes mxPulse{from{transform:scale(.55);opacity:.65}to{transform:scale(1.55);opacity:0}}
+  .mx-eyebrow{margin:20px 0 0;font:600 12px Inter,system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
+  .mx-hero h1{margin:10px 0 14px;font:600 clamp(31px,4.5vw,49px)/1.09 Fraunces,serif;letter-spacing:-.012em;color:var(--paper)}
+  .mx-hero h1 em{font-style:italic;color:var(--accent);background:linear-gradient(100deg,#8fd8b0,#f0c9a8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .mx-lead{margin:0;font:400 16px/1.66 Inter,system-ui,sans-serif;color:rgba(250,247,240,.78);max-width:58ch}
+  .mx-aud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:24px}
+  .mx-aud-label{font-size:13.5px;color:rgba(250,247,240,.65)}
+  .mx-segwrap{display:inline-flex;gap:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:4px}
+  .mx-seg{border:0;background:transparent;color:rgba(250,247,240,.72);padding:8px 18px;border-radius:999px;font:600 13.5px Inter,system-ui,sans-serif;cursor:pointer;transition:color .2s ease,background .25s ease,box-shadow .25s ease}
+  .mx-seg:hover{color:var(--paper)}
+  .mx-seg.is-on{background:var(--paper);color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .mx-feats{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:20px 0 0}
+  .mx-feats li{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);color:rgba(250,247,240,.86);border-radius:999px;padding:6px 13px;font-size:12.5px}
+  .mx-feats li::before{content:"✓ ";color:var(--accent);font-weight:700}
+
+  /* KPI glass panel (hero right) */
+  .mx-kpanel{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:22px 24px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 28px 64px -34px rgba(0,0,0,.65)}
+  .mx-kpanel-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font:600 11.5px Inter,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,247,240,.62);margin-bottom:8px}
+  .mx-kpanel-head span{font:500 11.5px Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:rgba(250,247,240,.45)}
+  .mx-krow{display:grid;grid-template-columns:minmax(120px,1fr) minmax(70px,120px) auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.09);font-size:13.5px;color:rgba(250,247,240,.82)}
+  .mx-krow:last-of-type{border-bottom:0}
+  .mx-krow b{font:700 17px/1.2 Fraunces,serif;color:var(--paper);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .mx-kbar{height:6px;border-radius:999px;background:rgba(255,255,255,.13);overflow:hidden;display:block}
+  .mx-kbar i{display:block;height:100%;border-radius:999px;background:var(--accent);box-shadow:0 0 10px rgba(255,255,255,.22)}
+  .mx-krow-plain{grid-template-columns:1fr auto}
+  .mx-kfoot{margin-top:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,.09);font-size:12px;line-height:1.5;color:rgba(250,247,240,.55)}
+
+  /* ================= TABS (segmented tray) ================= */
+  .mx-tabs{display:inline-flex;gap:4px;background:#f3edde;border:1px solid var(--line);border-radius:14px;padding:4px;margin:0 0 22px}
+  .mx-tab{border:0;background:transparent;padding:10px 18px;border-radius:10px;font:600 14.5px Inter,system-ui,sans-serif;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:color .2s ease,background .25s ease,box-shadow .25s ease}
+  .mx-tab svg{width:16px;height:16px;flex:none}
+  .mx-tab:hover{color:var(--ink)}
+  .mx-tab.is-on{background:#fff;color:var(--ink);box-shadow:0 2px 10px rgba(31,27,16,.12)}
+
+  /* ================= CARDS ================= */
+  .mx-card{background:#fff;border:1px solid var(--line);border-radius:var(--mx-r);padding:24px 26px;box-shadow:var(--mx-sh)}
+  .mx-lift{transition:transform .18s ease,box-shadow .3s ease}
+  .mx-lift:hover{transform:translateY(-3px);box-shadow:var(--mx-sh-hi)}
+  .mx-card h3{margin:0 0 6px;font:700 21px/1.25 Fraunces,serif;letter-spacing:-.01em}
+  .mx-over{margin:0 0 6px;font:700 11px Inter,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  .mx-sub{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.55}
+  .mx-main{display:grid;grid-template-columns:1.06fr .94fr;gap:22px;align-items:start}
+  @media(max-width:900px){.mx-main{grid-template-columns:1fr}}
+  .mx-result{position:sticky;top:18px;scroll-margin-top:20px}
+  @media(max-width:900px){.mx-result{position:static}}
+
+  /* ================= FORM ================= */
+  .mx-step{border:0;margin:0 0 20px;padding:0}
+  .mx-step legend{display:flex;align-items:center;gap:10px;font:700 17.5px Fraunces,serif;margin-bottom:14px;padding:0}
+  .mx-step legend b{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:var(--accent);background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 68%,var(--ink)));color:#fff;font:600 13px Inter,sans-serif;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+  .mx-presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px;font-size:13px;color:var(--muted)}
+  .mx-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:500 13px Inter,system-ui,sans-serif;cursor:pointer;color:var(--ink);transition:all .16s ease}
+  .mx-chip:hover{border-color:var(--accent);color:var(--accent);background:#f4faf6;transform:translateY(-1px)}
+  .mx-progress{height:6px;background:#f3ecdc;border-radius:999px;overflow:hidden;margin:2px 0 5px}
+  .mx-progress i{display:block;height:100%;width:0;background:var(--accent);background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));border-radius:999px;transition:width .35s ease}
+  .mx-prog-label{margin:0 0 18px;font-size:12px;color:var(--muted)}
+  .mx-form-card :is(input,select){background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:500 14px Inter,system-ui,sans-serif;color:var(--ink);width:100%;transition:border-color .15s ease,box-shadow .15s ease}
+  .mx-form-card :is(input,select):hover{border-color:#cfc6ae}
+  .mx-form-card :is(input,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,27,16,.08);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+  .mx-form-card .field span{font:600 11px Inter,system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .mx-alert{background:#f8e1da;color:var(--accent-2);border-left:4px solid var(--accent-2);border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:14px;line-height:1.5}
+  .mx-submit-row{display:flex;gap:10px;margin-top:4px}
+  .mx-submit-row .mx-cta{flex:1}
+  .mx-cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 22px;background:var(--accent);background:linear-gradient(135deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 66%,var(--ink)) 100%);color:#fff;font:600 15px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 12px 26px -12px rgba(31,27,16,.5);transition:transform .15s ease,box-shadow .25s ease,filter .2s ease}
+  .mx-cta:hover{transform:translateY(-1px);filter:brightness(1.06);box-shadow:0 16px 32px -12px rgba(31,27,16,.55)}
+  .mx-cta:active{transform:none}
+  .mx-cta[disabled]{opacity:.65;cursor:wait;transform:none}
+  .mx-cta::after{content:"";position:absolute;top:0;bottom:0;left:-75%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .55s ease;pointer-events:none}
+  .mx-cta:hover::after{left:135%}
+
+  /* ================= EMPTY STATE ================= */
+  .mx-empty{text-align:center;padding:26px 8px;color:var(--muted)}
+  .mx-empty svg{width:190px;height:auto;margin-bottom:4px}
+  .mx-empty-t{margin:6px 0 0;font-size:14px;line-height:1.6}
+  .mx-empty-t b{color:var(--ink)}
+  .mx-mini-steps{display:grid;gap:7px;list-style:none;padding:0;margin:16px auto 0;max-width:260px;text-align:left;font-size:13px;color:var(--muted)}
+  .mx-mini-steps li{display:flex;gap:9px;align-items:center}
+  .mx-mini-steps li b{width:21px;height:21px;border-radius:50%;background:#f3ecdc;color:var(--ink);display:grid;place-items:center;font-size:11px;flex:none}
+  #mx-empty .mx-feats{justify-content:center}
+  #mx-empty .mx-feats li{background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+  #mx-empty .mx-feats li::before{content:""}
+
+  /* ================= RESULT (gauge / verdict / influence) ================= */
+  .mx-banner{display:flex;gap:13px;align-items:flex-start;border-radius:14px;padding:14px 16px;font-size:14.5px;line-height:1.5;margin-bottom:16px;box-shadow:inset 0 0 0 1px rgba(31,27,16,.04)}
+  .mx-banner.ok{background:#e3f2e9;color:#1e5c3c}
+  .mx-banner.no{background:#fbe6de;color:#8c3a22}
+  .mx-banner-ic{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.55);display:grid;place-items:center;flex:none;margin-top:1px}
+  .mx-banner-ic svg{width:19px;height:19px}
+  .mx-banner b{font-size:15.5px}
+  .mx-gauge-wrap{display:flex;justify-content:center;margin:2px 0 0}
+  .mx-gauge{width:100%;max-width:360px;height:auto}
+  .mx-track{stroke:#ece5d4;fill:none;stroke-linecap:round}
+  .mx-tick{stroke:#d9cfba;stroke-width:2;stroke-linecap:round}
+  .mx-fill{stroke:url(#mxaG);transition:stroke-dasharray .95s cubic-bezier(.25,.75,.3,1)}
+  .mx-fill.no{stroke:var(--accent-2)}
+  .mx-thr{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+  .mx-knob{fill:#fff;stroke:var(--accent);stroke-width:3}
+  .mx-knob.no{stroke:var(--accent-2)}
+  .mx-pct{font:700 34px Fraunces,serif;fill:var(--ink)}
+  .mx-pct-sub{font:500 9.5px Inter,sans-serif;fill:var(--muted);letter-spacing:.04em}
+  .mx-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+  .mx-pill{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;box-shadow:0 2px 8px -4px rgba(31,27,16,.15)}
+  .mx-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+  .mx-dot.alt{background:var(--accent-2)}
+  .mx-section{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+  .mx-lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 5px 0 1px;vertical-align:-1px}
+  .mx-lg.pos{background:var(--accent)}
+  .mx-lg.neg{background:var(--accent-2)}
+  .mx-inf-list{list-style:none;margin:0;padding:0;display:grid;gap:13px}
+  .mx-inf{display:grid;grid-template-columns:minmax(110px,1.1fr) 1.4fr 74px;gap:10px;align-items:center;font-size:14px;animation:mxRise .4s ease both}
+  .mx-inf small{display:block;color:var(--muted);font-size:12px}
+  .mx-tag{margin-left:6px;background:#f8e1da;color:var(--accent-2);border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+  .mx-inf-bar{position:relative;height:14px;background:#f3ecdc;border-radius:999px}
+  .mx-axis{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.32}
+  .mx-bar{position:absolute;top:0;bottom:0;border-radius:999px;transition:width .75s cubic-bezier(.2,.7,.3,1)}
+  .mx-bar.pos{background-color:var(--accent);background-image:linear-gradient(90deg,rgba(255,255,255,.32),rgba(255,255,255,0) 62%)}
+  .mx-bar.neg{background-color:var(--accent-2);background-image:linear-gradient(270deg,rgba(255,255,255,.32),rgba(255,255,255,0) 62%)}
+  .mx-pts{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 0;box-shadow:0 1px 4px -2px rgba(31,27,16,.2)}
+  .mx-pts.pos{color:var(--accent)}
+  .mx-pts.neg{color:var(--accent-2)}
+  @media(max-width:560px){.mx-inf{grid-template-columns:1fr 1fr}.mx-inf-bar{grid-column:1 / -1;order:3}}
+
+  /* ================= DETAIL BAND (curve + reco + history) ================= */
+  .mx-grid2{display:grid;grid-template-columns:1.12fr .88fr;gap:22px;align-items:start;margin-top:22px}
+  @media(max-width:900px){.mx-grid2{grid-template-columns:1fr}}
+  .mx-sec{margin-top:22px}
+  .mx-curve{width:100%;height:auto}
+  .mx-curve .line{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+  .mx-curve .cut{stroke:var(--ink);stroke-dasharray:4 4;opacity:.45}
+  .mx-curve text{font:11px Inter,sans-serif;fill:var(--muted)}
+  .mx-cut-lab{font:600 10px Inter,sans-serif;fill:var(--muted);letter-spacing:.03em}
+  .mx-curve .dot{fill:var(--accent-2);stroke:#fff;stroke-width:2.5}
+  .mx-halo{fill:var(--accent-2);opacity:.16}
+  .mx-curve .hover-line{stroke:var(--ink);stroke-width:1;opacity:.35}
+  .mx-curve .hover-dot{fill:var(--accent-2);stroke:#fff;stroke-width:2}
+  .mx-curve .hover-tip{font:600 12px Inter,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+  .mx-reco{list-style:none;margin:0;padding:0;counter-reset:mxr}
+  .mx-reco li{position:relative;padding:11px 0 11px 46px;counter-increment:mxr;border-bottom:1px dashed var(--line);font-size:14.5px;line-height:1.5;transition:background .15s ease}
+  .mx-reco li:hover{background:#faf7f0}
+  .mx-reco li:last-child{border-bottom:0}
+  .mx-reco li::before{content:counter(mxr);position:absolute;left:0;top:10px;width:29px;height:29px;border-radius:50%;background:var(--accent);background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 66%,var(--ink)));color:#fff;display:grid;place-items:center;font:600 13px Inter,sans-serif;box-shadow:0 4px 10px -4px rgba(31,27,16,.45)}
+  .mx-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .mx-btn2{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 17px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .16s ease}
+  .mx-btn2 svg{width:15px;height:15px}
+  .mx-btn2:hover{border-color:var(--accent);color:var(--accent);background:#f4faf6;transform:translateY(-1px)}
+  .mx-table{width:100%;border-collapse:collapse;font-size:14px}
+  .mx-table th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;padding:7px 8px;border-bottom:1px solid var(--line)}
+  .mx-table td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .mx-table tbody tr{transition:background .12s ease}
+  .mx-table tbody tr:hover{background:#faf7f0}
+  .mx-mini{display:inline-block;width:70px;height:8px;background:#f3ecdc;border-radius:999px;vertical-align:middle;margin-right:8px;position:relative;overflow:hidden}
+  .mx-mini i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:999px}
+  .mx-mini i.no{background:var(--accent-2)}
+  .mx-badge{display:inline-block;padding:2.5px 11px;border-radius:999px;font-size:12px;font-weight:600}
+  .mx-badge.yes{background:#d9f0e8;color:var(--accent)}
+  .mx-badge.no{background:#f8e1da;color:var(--accent-2)}
+  .mx-note{display:flex;gap:9px;align-items:flex-start;margin-top:18px;font-size:12.5px;line-height:1.55;color:var(--muted);background:#faf6ec;border:1px dashed #ddD2b8;border-radius:12px;padding:11px 14px}
+  .mx-note svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--accent-2)}
+
+  /* ================= BATCH ================= */
+  .mx-batch{display:grid;gap:22px}
+  .mx-drop{display:flex;gap:16px;align-items:center;border:1.5px dashed #d8cfba;border-radius:16px;padding:22px 24px;background:linear-gradient(180deg,#fff,#fdfbf5);cursor:pointer;transition:all .2s ease}
+  .mx-drop:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 14px 30px -22px rgba(31,27,16,.45)}
+  .mx-drop.is-drag{border-color:var(--accent);background:#eef8f2;transform:scale(1.006)}
+  .mx-drop input{display:none}
+  .mx-drop-ic{width:52px;height:52px;border-radius:50%;background:#e9f5ee;color:var(--accent);display:grid;place-items:center;flex:none}
+  .mx-drop-ic svg{width:23px;height:23px}
+  .mx-drop-tx b{font-size:15px}
+  .mx-drop-tx .mx-sub{margin:3px 0 0}
+  .mx-cols{font-size:13px;color:var(--muted);line-height:1.8}
+  .mx-cols code{margin:2px;background:#f6f1e6;border:1px solid var(--line);border-radius:7px;padding:2px 8px;font:600 12px Menlo,Consolas,monospace;color:var(--ink)}
+  .mx-kpis-batch{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+  .mx-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;gap:13px;align-items:center;box-shadow:0 1px 2px rgba(31,27,16,.04),0 14px 30px -24px rgba(31,27,16,.4)}
+  .mx-kpi-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#e9f5ee;color:var(--accent);flex:none}
+  .mx-kpi-ic.alt{background:#f9e9e2;color:var(--accent-2)}
+  .mx-kpi-ic svg{width:20px;height:20px}
+  .mx-kpi b{display:block;font:700 25px/1.15 Fraunces,serif}
+  .mx-kpi span{color:var(--muted);font-size:12.5px}
+  .mx-stack{display:flex;height:24px;border-radius:999px;overflow:hidden;background:#f3ecdc;margin:6px 0 8px}
+  .mx-stack i{display:block;height:100%}
+  .mx-legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted)}
+  .mx-legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+  .mx-charts{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+  @media(max-width:900px){.mx-charts{grid-template-columns:1fr}}
+  .mx-hist{display:flex;align-items:flex-end;gap:6px;height:140px;position:relative;padding-top:6px}
+  .mx-hist .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+  .mx-hist .col i{display:block;width:100%;background-color:var(--accent);background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 55%);border-radius:7px 7px 3px 3px;min-height:2px;transition:height .6s cubic-bezier(.2,.7,.3,1)}
+  .mx-hist-x{display:flex;gap:6px;font-size:10px;color:var(--muted);text-align:center;margin-top:5px}
+  .mx-hist-x span{flex:1}
+  .mx-hist .cut{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--ink);opacity:.5}
+  .mx-hbar{display:grid;grid-template-columns:78px 1fr 86px;gap:10px;align-items:center;font-size:13px;margin:9px 0}
+  .mx-hbar .trk{height:13px;background:#f3ecdc;border-radius:999px;overflow:hidden}
+  .mx-hbar .trk i{display:block;height:100%;background:var(--accent);background-image:linear-gradient(90deg,rgba(255,255,255,.3),rgba(255,255,255,0) 60%);border-radius:999px}
+  .mx-hbar small{color:var(--muted)}
+
+  /* ================= HELP ================= */
+  .mx-help{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:900px){.mx-help{grid-template-columns:1fr}}
+  .mx-help h3{margin:0 0 10px}
+  .mx-help p,.mx-help li{color:var(--muted);font-size:14.5px;line-height:1.6}
+  .mx-help ul{margin:0;padding:0;list-style:none}
+  .mx-help li{position:relative;padding-left:19px;margin:9px 0}
+  .mx-help li::before{content:"";position:absolute;left:0;top:.58em;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .mx-help .mx-card:last-child li::before{background:var(--accent-2)}
+  .mx-help-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;margin-bottom:12px}
+  .mx-help-ic.a{background:#e9f5ee;color:var(--accent)}
+  .mx-help-ic.b{background:#f9e9e2;color:var(--accent-2)}
+  .mx-help-ic svg{width:20px;height:20px}
+  .mx-help b{color:var(--ink)}
+
+  .mx-rise{animation:mxRise .5s ease both}
+  @keyframes mxRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.mx-rise,.mx-inf,.mx-chip-live i::after{animation:none!important}.mx-lift,.mx-cta,.mx-btn2,.mx-chip{transition:none!important}}
+  @media (max-width:640px){.mx-hero{padding:30px 24px 30px;border-radius:20px}.mx-card{padding:20px 18px}}
+  @media print{
+    .mx-hero,.mx-orb,.mx-dots,.mx-orbits,.mx-tabs,.mx-form-card,.mx-actions,.mx-help,#mx-tab-batch,.mx-progress,.mx-prog-label,.mx-chip-live,.mx-aud{display:none!important}
+    .mx-main{display:block}.mx-result{position:static}
+    .mx-card{box-shadow:none;border-color:#ddd}
+  }
+</style>
+
+<header class="mx-hero">
+  <i class="mx-orb a" aria-hidden="true"></i>
+  <i class="mx-orb b" aria-hidden="true"></i>
+  <svg class="mx-orbits" viewBox="0 0 560 420" aria-hidden="true">
+    <g fill="none" stroke="rgba(250,247,240,.10)" stroke-width="1">
+      <circle cx="420" cy="60" r="90"/><circle cx="420" cy="60" r="150"/><circle cx="420" cy="60" r="210"/>
+    </g>
+    <path d="M270 130 A150 150 0 0 1 560 108" fill="none" stroke="rgba(250,247,240,.22)" stroke-width="1.5" stroke-dasharray="3 6"/>
+    <circle class="mx-orbit-dot" cx="560" cy="108" r="5"/>
+  </svg>
+  <i class="mx-dots" aria-hidden="true"></i>
+  <div class="mx-hero-in">
+    <div class="mx-hero-copy">
+      <span class="mx-chip-live"><i></i>Modèle opérationnel{% if stats.model %} · {{ stats.model }}{% endif %}</span>
+      <p class="mx-eyebrow">Objectif métier · Mieux connaître son public</p>
+      <h1>Comprendre le <em>foyer</em> de vos publics, avant même de leur parler</h1>
+      <p class="mx-lead">À partir d'un profil socio-professionnel, l'outil estime la probabilité qu'une personne soit mariée, montre ce qui pèse dans l'estimation et propose des actions adaptées. Il peut aussi analyser tout un fichier clients en une seule fois.</p>
+      <div class="mx-aud">
+        <span class="mx-aud-label">Je présente l'outil à :</span>
+        <div class="mx-segwrap" role="group" aria-label="Type d'organisation">
+          <button type="button" class="mx-seg is-on" data-aud="banque">Une banque</button>
+          <button type="button" class="mx-seg" data-aud="association">Une association</button>
+        </div>
+      </div>
+      <ul class="mx-feats">
+        <li>Jauge de probabilité</li>
+        <li>Explication facteur par facteur</li>
+        <li>Courbe interactive selon l'âge</li>
+        <li>Actions suggérées</li>
+        <li>Analyse d'un fichier clients</li>
+      </ul>
+    </div>
+    <div class="mx-hero-side">
+      <div class="mx-kpanel">
+        <div class="mx-kpanel-head">Fiabilité du modèle <span>mesurée sur le jeu de test</span></div>
+        {% if stats.accuracy %}<div class="mx-krow"><span>Exactitude (accuracy)</span><span class="mx-kbar"><i style="width:{{ stats.accuracy }}%"></i></span><b>{{ stats.accuracy }} %</b></div>{% endif %}
+        {% if stats.auc %}<div class="mx-krow mx-krow-plain"><span>AUC · pouvoir discriminant</span><b>{{ stats.auc }}</b></div>{% endif %}
+        {% if stats.precision %}<div class="mx-krow"><span>Précision (classe « marié »)</span><span class="mx-kbar"><i style="width:{{ stats.precision }}%"></i></span><b>{{ stats.precision }} %</b></div>{% endif %}
+        <div class="mx-krow"><span>Seuil de classement</span><span class="mx-kbar"><i style="width:{{ stats.threshold }}%"></i></span><b>{{ stats.threshold }} %</b></div>
+        <div class="mx-kfoot">{% if stats.model %}{{ stats.model }} · {% endif %}Données UCI Adult 1994 — une estimation statistique, jamais un jugement individuel.</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="mx-tabs" role="tablist">
+  <button type="button" class="mx-tab is-on" data-tab="single" role="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    Analyser un profil</button>
+  <button type="button" class="mx-tab" data-tab="batch" role="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+    Analyser un fichier clients</button>
+</div>
+
+<!-- ============================ ANALYSE D'UN PROFIL ============================ -->
+<section id="mx-tab-single">
+  <div class="mx-main">
+    <form id="mx-form" class="mx-card mx-form-card" method="post" novalidate>
+      {% csrf_token %}
+      <div id="mx-alert" class="mx-alert" hidden></div>
+
+      <div class="mx-presets">
+        <span>Profils types :</span>
+        <button type="button" class="mx-chip" data-preset="debut">Début de carrière</button>
+        <button type="button" class="mx-chip" data-preset="employe">Employé expérimenté</button>
+        <button type="button" class="mx-chip" data-preset="cadre">Cadre établi</button>
+        <button type="button" class="mx-chip" data-preset="retraite">Proche de la retraite</button>
+      </div>
+      <div class="mx-progress" aria-hidden="true"><i id="mx-prog"></i></div>
+      <p class="mx-prog-label" id="mx-prog-label">Profil complété à 0 %</p>
+
+      <fieldset class="mx-step">
+        <legend><b>1</b> La personne</legend>
+        <div class="fields">
+          <label class="field"><span>Âge</span>{{ form.age }}<div class="err" data-err="age"></div></label>
+          <label class="field"><span>Sexe</span>{{ form.sex }}<div class="err" data-err="sex"></div></label>
+          <label class="field"><span>Niveau d'études</span>{{ form.education_num }}<div class="err" data-err="education_num"></div></label>
+          <label class="field"><span>Pays d'origine</span>{{ form.native_country }}<div class="err" data-err="native_country"></div></label>
+          <label class="field"><span>Origine (catégorie UCI)</span>{{ form.race }}<div class="err" data-err="race"></div></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="mx-step">
+        <legend><b>2</b> Situation professionnelle</legend>
+        <div class="fields">
+          <label class="field"><span>Secteur d'emploi</span>{{ form.workclass }}<div class="err" data-err="workclass"></div></label>
+          <label class="field"><span>Profession</span>{{ form.occupation }}<div class="err" data-err="occupation"></div></label>
+          <label class="field"><span>Heures travaillées / semaine</span>{{ form.hours_per_week }}<div class="err" data-err="hours_per_week"></div></label>
+          <label class="field"><span>Revenu annuel</span>{{ form.income }}<div class="err" data-err="income"></div></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="mx-step">
+        <legend><b>3</b> Épargne et placements</legend>
+        <div class="fields">
+          <label class="field"><span>Gains en capital (USD)</span>{{ form.capital_gain }}<div class="err" data-err="capital_gain"></div></label>
+          <label class="field"><span>Pertes en capital (USD)</span>{{ form.capital_loss }}<div class="err" data-err="capital_loss"></div></label>
+        </div>
+      </fieldset>
+
+      <div class="mx-submit-row">
+        <button class="btn mx-cta" type="submit" id="mx-go">Analyser ce profil</button>
+        <button class="mx-btn2" type="button" id="mx-reset">Réinitialiser</button>
+      </div>
+    </form>
+
+    <aside class="mx-card mx-result" id="mx-result" aria-live="polite">
+      <div class="mx-empty" id="mx-empty">
+        <svg viewBox="0 0 220 130" aria-hidden="true">
+          <path d="M30 110 A80 80 0 0 1 190 110" fill="none" stroke="#ece5d4" stroke-width="15" stroke-linecap="round"/>
+          <path d="M30 110 A80 80 0 0 1 63 45.3" fill="none" stroke="var(--accent)" opacity=".3" stroke-width="15" stroke-linecap="round"/>
+          <circle cx="63" cy="45.3" r="6" fill="#fff" stroke="var(--accent)" stroke-width="2.5" opacity=".5"/>
+          <text x="110" y="102" text-anchor="middle" style="font:italic 700 30px Fraunces,serif;fill:#c9c0ac">?</text>
+        </svg>
+        <p class="mx-empty-t"><b>Aucune analyse pour l'instant.</b><br>Choisissez un profil type ou remplissez le formulaire, puis lancez l'analyse.</p>
+        <ol class="mx-mini-steps">
+          <li><b>1</b> Choisissez un profil type ou remplissez les champs</li>
+          <li><b>2</b> Cliquez sur « Analyser ce profil »</li>
+          <li><b>3</b> Lisez la jauge, les facteurs et les actions suggérées</li>
+        </ol>
+      </div>
+      <div id="mx-out" hidden></div>
+    </aside>
+  </div>
+
+  <!-- Résultats détaillés : pleine largeur, sous le formulaire -->
+  <div id="mx-out-more" hidden></div>
+</section>
+
+<!-- ============================ ANALYSE D'UN FICHIER ============================ -->
+<section id="mx-tab-batch" class="mx-batch" hidden>
+  <div class="mx-card mx-lift">
+    <p class="mx-over">Traitement par lot</p>
+    <h3>Analyser un fichier clients</h3>
+    <p class="mx-sub">Déposez un fichier CSV (séparateur « , » ou « ; », {{ max_rows }} lignes maximum, 2 Mo). Chaque ligne reçoit une probabilité et un profil estimé.</p>
+    <label class="mx-drop" id="mx-drop" for="mx-file">
+      <input type="file" id="mx-file" accept=".csv,text/csv">
+      <span class="mx-drop-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+      <span class="mx-drop-tx"><b>Cliquez ou glissez-déposez un fichier CSV ici</b><span class="mx-sub" id="mx-filename">Aucun fichier choisi</span></span>
+    </label>
+    <div class="mx-actions">
+      <button type="button" class="btn mx-cta" id="mx-run" disabled>Analyser le fichier</button>
+      <a class="mx-btn2" href="{% url 'married_template' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Télécharger un fichier modèle</a>
+    </div>
+    <p class="mx-cols">Colonnes obligatoires :
+      {% for c in required_columns %}<code>{{ c }}</code>{% endfor %}
+      <br>Les autres colonnes (par exemple un identifiant client) sont conservées dans le fichier de résultats.</p>
+    <div id="mx-batch-alert" class="mx-alert" hidden></div>
+  </div>
+  <div id="mx-batch-out" hidden></div>
+</section>
+
+<!-- ============================ AIDE ============================ -->
+<section class="mx-help">
+  <div class="mx-card mx-lift">
+    <span class="mx-help-ic a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+    <h3>Comment lire le résultat</h3>
+    <ul>
+      <li><b>La jauge</b> indique la probabilité, estimée par le modèle, qu'une personne soit mariée. Le trait noir marque la limite à partir de laquelle on la classe « mariée ».</li>
+      <li><b>Les barres « Pourquoi ? »</b> comparent le profil à un profil moyen : une barre verte augmente la probabilité d'être marié(e), une barre rouge la diminue.</li>
+      <li><b>La courbe</b> montre comment l'estimation changerait si l'âge était différent, tout le reste étant identique. Survolez-la pour lire chaque âge.</li>
+      {% if reliability %}<li><b>Fiabilité :</b> dans nos tests, le modèle classe correctement environ {{ reliability }} profils sur 10.</li>{% endif %}
+    </ul>
+  </div>
+  <div class="mx-card mx-lift">
+    <span class="mx-help-ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+    <h3>À savoir avant de l'utiliser</h3>
+    <ul>
+      <li>C'est une <b>estimation statistique</b>, pas une information certaine. Elle ne doit jamais servir à refuser un service ou à prendre une décision sur une personne.</li>
+      <li>Le modèle a été entraîné sur des données américaines de 1994, où les hommes sont fortement majoritaires. Il tend à sous-estimer les femmes mariées : les variables sensibles (sexe, origine, pays) sont donc affichées par transparence.</li>
+      <li>Les analyses ne sont pas enregistrées : rien n'est conservé sur le serveur.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  "use strict";
+  var API_URL = "{% url 'married_api' %}";
+  var BATCH_URL = "{% url 'married_batch' %}";
+
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c];
+    });
+  }
+  function csrf() { var el = $("input[name=csrfmiddlewaretoken]"); return el ? el.value : ""; }
+  function num(x, d) { return Number(x).toFixed(d === undefined ? 1 : d).replace(".", ","); }
+
+  var audience = "banque";
+  var last = null;
+  var history = [];
+
+  /* ---------- onglets et public ---------- */
+  $$(".mx-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      $$(".mx-tab").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+      $("#mx-tab-single").hidden = b.dataset.tab !== "single";
+      $("#mx-tab-batch").hidden = b.dataset.tab !== "batch";
+    });
+  });
+  $$(".mx-seg").forEach(function (b) {
+    b.addEventListener("click", function () {
+      audience = b.dataset.aud;
+      $$(".mx-seg").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+      if (last) { renderReco(); }
+    });
+  });
+
+  /* ---------- profils types ---------- */
+  var PRESETS = {
+    debut:    {age: 24, sex: "Female", education_num: 10, race: "White", native_country: "United-States",
+               workclass: "Private", occupation: "Adm-clerical", hours_per_week: 35, income: "<=50K",
+               capital_gain: 0, capital_loss: 0},
+    employe:  {age: 38, sex: "Male", education_num: 9, race: "White", native_country: "United-States",
+               workclass: "Private", occupation: "Craft-repair", hours_per_week: 40, income: "<=50K",
+               capital_gain: 0, capital_loss: 0},
+    cadre:    {age: 45, sex: "Male", education_num: 13, race: "White", native_country: "United-States",
+               workclass: "Private", occupation: "Exec-managerial", hours_per_week: 48, income: ">50K",
+               capital_gain: 5000, capital_loss: 0},
+    retraite: {age: 62, sex: "Female", education_num: 9, race: "White", native_country: "United-States",
+               workclass: "Private", occupation: "Other-service", hours_per_week: 25, income: "<=50K",
+               capital_gain: 0, capital_loss: 0}
+  };
+  var form = $("#mx-form");
+  $$(".mx-chip").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var preset = PRESETS[b.dataset.preset];
+      Object.keys(preset).forEach(function (name) {
+        var el = form.elements[name];
+        if (!el) { return; }
+        el.value = preset[name];
+        if (el.tagName === "SELECT" && el.selectedIndex === -1) { el.selectedIndex = 0; }
+      });
+      clearErrors();
+      updateProg();
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", {cancelable: true}));
+    });
+  });
+
+  /* ---------- réinitialiser ---------- */
+  var resetBtn = $("#mx-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function () {
+      form.reset();
+      clearErrors();
+      updateProg();
+    });
+  }
+
+  /* ---------- barre de progression du formulaire ---------- */
+  var prog = $("#mx-prog"), progLabel = $("#mx-prog-label");
+  function updateProg() {
+    if (!prog || !form) { return; }
+    var fields = $$("[name]", form).filter(function (el) {
+      return el.name !== "csrfmiddlewaretoken" && el.tagName !== "BUTTON" && el.type !== "hidden";
+    });
+    var filled = fields.filter(function (el) { return String(el.value).trim() !== ""; }).length;
+    var pct = fields.length ? Math.round(filled / fields.length * 100) : 0;
+    prog.style.width = pct + "%";
+    if (progLabel) { progLabel.textContent = "Profil complété à " + pct + " %"; }
+  }
+  form.addEventListener("input", updateProg);
+  form.addEventListener("change", updateProg);
+  updateProg();
+
+  /* ---------- erreurs ---------- */
+  function clearErrors() {
+    $$("[data-err]").forEach(function (e) { e.textContent = ""; });
+    $("#mx-alert").hidden = true;
+  }
+  function showErrors(errors) {
+    var general = [];
+    Object.keys(errors || {}).forEach(function (field) {
+      var msgs = errors[field].map(function (m) { return m.message || m; }).join(" ");
+      var slot = $('[data-err="' + field + '"]');
+      if (slot) { slot.textContent = msgs; } else { general.push(msgs); }
+    });
+    if (general.length) { showAlert("#mx-alert", general.join(" ")); }
+  }
+  function showAlert(sel, msg) { var el = $(sel); el.textContent = msg; el.hidden = false; }
+
+  /* ---------- envoi du formulaire ---------- */
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearErrors();
+    var data = {};
+    new FormData(form).forEach(function (v, k) { if (k !== "csrfmiddlewaretoken") { data[k] = v; } });
+    var btn = $("#mx-go");
+    btn.disabled = true; btn.textContent = "Analyse en cours…";
+    fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": csrf()},
+      body: JSON.stringify(data)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.ok) { showErrors(j.errors); return; }
+      last = j;
+      render(j);
+      remember(j);
+    }).catch(function () {
+      showAlert("#mx-alert", "Le service est momentanément indisponible. Réessayez dans un instant.");
+    }).then(function () {
+      btn.disabled = false; btn.textContent = "Analyser ce profil";
+    });
+  });
+
+  /* ---------- compteurs animés ---------- */
+  function countUp(el, target) {
+    if (!el) { return; }
+    var t0 = null, DUR = 900;
+    function step(ts) {
+      if (!t0) { t0 = ts; }
+      var k = Math.min(1, (ts - t0) / DUR);
+      k = 1 - Math.pow(1 - k, 3);
+      el.textContent = num(target * k) + " %";
+      if (k < 1) { requestAnimationFrame(step); }
+    }
+    requestAnimationFrame(step);
+  }
+  function animateKnob(el, target) {
+    if (!el) { return; }
+    var t0 = null, DUR = 950;
+    function step(ts) {
+      if (!t0) { t0 = ts; }
+      var k = Math.min(1, (ts - t0) / DUR);
+      k = 1 - Math.pow(1 - k, 3);
+      var a = Math.PI * (1 - (target * k) / 100);
+      el.setAttribute("cx", (110 + 88 * Math.cos(a)).toFixed(1));
+      el.setAttribute("cy", (110 - 88 * Math.sin(a)).toFixed(1));
+      if (k < 1) { requestAnimationFrame(step); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- graphiques (SVG) ---------- */
+  function gauge(p, thr, married) {
+    var a = Math.PI * (1 - thr / 100);
+    var x1 = 110 + 79 * Math.cos(a), y1 = 110 - 79 * Math.sin(a);
+    var x2 = 110 + 97 * Math.cos(a), y2 = 110 - 97 * Math.sin(a);
+    var C = Math.PI * 88;
+    var ticks = "";
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      var t = Math.PI * (1 - v / 100);
+      ticks += '<line class="mx-tick" x1="' + (110 + 101 * Math.cos(t)).toFixed(1) + '" y1="' + (110 - 101 * Math.sin(t)).toFixed(1) +
+        '" x2="' + (110 + 107 * Math.cos(t)).toFixed(1) + '" y2="' + (110 - 107 * Math.sin(t)).toFixed(1) + '"/>';
+    });
+    return '<svg class="mx-gauge" viewBox="0 0 220 128" role="img" aria-label="Probabilité ' + num(p) + ' pour cent">' +
+      '<defs><linearGradient id="mxaG" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" style="stop-color:color-mix(in srgb,var(--accent) 55%,#fff)"/>' +
+        '<stop offset="1" style="stop-color:var(--accent)"/></linearGradient></defs>' +
+      ticks +
+      '<path d="M22 110 A88 88 0 0 1 198 110" class="mx-track" stroke-width="17"/>' +
+      '<path d="M22 110 A88 88 0 0 1 198 110" class="mx-fill' + (married ? "" : " no") + '" fill="none" stroke-width="17" ' +
+        'stroke-linecap="round" stroke-dasharray="0 ' + C.toFixed(2) + '" data-len="' + (C * p / 100).toFixed(2) + '" data-total="' + C.toFixed(2) + '"/>' +
+      '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" class="mx-thr"/>' +
+      '<circle class="mx-knob' + (married ? "" : " no") + '" id="mx-knob" cx="22" cy="110" r="8"/>' +
+      '<text x="110" y="100" text-anchor="middle" class="mx-pct" id="mx-pct">0 %</text>' +
+      '<text x="110" y="119" text-anchor="middle" class="mx-pct-sub">probabilité d’être marié(e)</text>' +
+      '</svg>';
+  }
+
+  function banner(married, title, text) {
+    var icon = married
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>';
+    return '<div class="mx-banner ' + (married ? "ok" : "no") + '"><span class="mx-banner-ic">' + icon + '</span>' +
+      '<div><b>' + esc(title) + '</b><br>' + esc(text) + '</div></div>';
+  }
+
+  function influences(list) {
+    var max = Math.max.apply(null, [1].concat(list.map(function (i) { return Math.abs(i.points); })));
+    return '<ul class="mx-inf-list">' + list.map(function (i, idx) {
+      var w = Math.abs(i.points) / max * 50, pos = i.points >= 0;
+      return '<li class="mx-inf" style="animation-delay:' + (idx * 50) + 'ms">' +
+        '<div><b>' + esc(i.label) + '</b>' + (i.sensitive ? '<span class="mx-tag" title="Variable sensible">sensible</span>' : '') +
+        '<small>' + esc(i.value) + '</small></div>' +
+        '<div class="mx-inf-bar"><i class="mx-axis"></i><i class="mx-bar ' + (pos ? "pos" : "neg") + '" data-w="' + w.toFixed(1) +
+        '" data-side="' + (pos ? "left" : "right") + '" style="width:0;' + (pos ? "left" : "right") + ':50%"></i></div>' +
+        '<div class="mx-pts ' + (pos ? "pos" : "neg") + '">' + (pos ? "+" : "−") + num(Math.abs(i.points)) + ' pts</div>' +
+        '</li>';
+    }).join("") + '</ul>';
+  }
+
+  function curve(c, age, thr) {
+    var W = 520, H = 240, L = 40, R = 14, T = 14, B = 30, iw = W - L - R, ih = H - T - B;
+    function x(a) { return L + (a - 18) / (80 - 18) * iw; }
+    function y(p) { return T + (1 - p / 100) * ih; }
+    var pts = c.ages.map(function (a, i) { return x(a).toFixed(1) + "," + y(c.probabilities[i]).toFixed(1); });
+    var line = "M" + pts.join(" L");
+    var area = line + " L" + x(80).toFixed(1) + "," + y(0).toFixed(1) + " L" + x(18).toFixed(1) + "," + y(0).toFixed(1) + " Z";
+    var idx = Math.max(0, Math.min(c.ages.length - 1, Math.round((age - 18) / 2)));
+    var cx = x(Math.max(18, Math.min(80, age))), cy = y(c.probabilities[idx]);
+    var grid = "";
+    [0, 50, 100].forEach(function (p) {
+      grid += '<line x1="' + L + '" y1="' + y(p) + '" x2="' + (W - R) + '" y2="' + y(p) + '" stroke="#e9e2d2"/>' +
+              '<text x="' + (L - 8) + '" y="' + (y(p) + 4) + '" text-anchor="end">' + p + '%</text>';
+    });
+    [20, 40, 60, 80].forEach(function (a) {
+      grid += '<text x="' + x(a) + '" y="' + (H - 8) + '" text-anchor="middle">' + a + ' ans</text>';
+    });
+    return '<svg id="mx-curve-svg" class="mx-curve" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Probabilité selon l’âge">' +
+      '<defs><linearGradient id="mxCvG" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" style="stop-color:var(--accent);stop-opacity:.28"/>' +
+        '<stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>' + grid +
+      '<line class="cut" x1="' + L + '" y1="' + y(thr) + '" x2="' + (W - R) + '" y2="' + y(thr) + '"/>' +
+      '<text class="mx-cut-lab" x="' + (W - R) + '" y="' + (y(thr) - 6).toFixed(1) + '" text-anchor="end">seuil · ' + num(thr, 0) + ' %</text>' +
+      '<path class="area" fill="url(#mxCvG)" d="' + area + '"/><path class="line" d="' + line + '"/>' +
+      '<line id="mx-cv-hover" class="hover-line" x1="0" y1="' + T + '" x2="0" y2="' + (H - B) + '" opacity="0"/>' +
+      '<circle id="mx-cv-dot" class="hover-dot" cx="0" cy="0" r="4.5" opacity="0"/>' +
+      '<circle class="mx-halo" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="11"/>' +
+      '<circle class="dot" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="5.5"/>' +
+      '<text id="mx-cv-tip" class="hover-tip" x="0" y="0" text-anchor="middle" opacity="0"></text>' +
+      '</svg>';
+  }
+
+  function attachCurveHover(svg, c) {
+    if (!svg) { return; }
+    var W = 520, H = 240, L = 40, R = 14, T = 14, B = 30;
+    var hLine = $("#mx-cv-hover", svg), hDot = $("#mx-cv-dot", svg), tip = $("#mx-cv-tip", svg);
+    function move(e) {
+      var rect = svg.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width * W;
+      var a = Math.max(18, Math.min(80, 18 + (px - L) / (W - L - R) * (80 - 18)));
+      var i = Math.max(0, Math.min(c.ages.length - 1, Math.round((a - 18) / 2)));
+      var age = c.ages[i], p = c.probabilities[i];
+      var xx = L + (age - 18) / (80 - 18) * (W - L - R);
+      var yy = T + (1 - p / 100) * (H - T - B);
+      hLine.setAttribute("x1", xx); hLine.setAttribute("x2", xx);
+      hDot.setAttribute("cx", xx); hDot.setAttribute("cy", yy);
+      tip.setAttribute("x", Math.max(75, Math.min(445, xx)));
+      tip.setAttribute("y", Math.max(24, yy - 12));
+      tip.textContent = age + " ans · " + num(p) + " %";
+      [hLine, hDot, tip].forEach(function (el) { el.setAttribute("opacity", "1"); });
+    }
+    function leave() { [hLine, hDot, tip].forEach(function (el) { el.setAttribute("opacity", "0"); }); }
+    svg.addEventListener("mousemove", move);
+    svg.addEventListener("mouseleave", leave);
+  }
+
+  /* ---------- rendu du résultat ---------- */
+  function renderReco() {
+    var box = $("#mx-reco");
+    if (!box || !last) { return; }
+    var title = audience === "banque" ? "Actions suggérées pour une banque" : "Actions suggérées pour une association";
+    $("#mx-reco-title").textContent = title;
+    box.innerHTML = last.recommendations[audience].map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+  }
+
+  function render(j) {
+    $("#mx-empty").hidden = true;
+    var out = $("#mx-out");
+    out.hidden = false;
+    out.innerHTML =
+      banner(j.married, j.title, j.text) +
+      '<div class="mx-gauge-wrap">' + gauge(j.probability, j.threshold, j.married) + '</div>' +
+      '<div class="mx-pills"><span class="mx-pill"><i class="mx-dot"></i>Confiance : <b>' + esc(j.confidence) + '</b></span>' +
+      '<span class="mx-pill"><i class="mx-dot alt"></i>Classé « marié(e) » à partir de ' + num(j.threshold, 0) + ' %</span></div>' +
+      '<div class="mx-section"><p class="mx-over">Explication</p><h3>Pourquoi cette estimation ?</h3>' +
+        '<p class="mx-sub">Comparé à un profil moyen du jeu de données. <span class="mx-lg pos"></span>Augmente la probabilité&nbsp;· <span class="mx-lg neg"></span>La diminue.</p>' +
+        influences(j.influences) + '</div>';
+
+    var more = $("#mx-out-more");
+    more.hidden = false;
+    more.innerHTML =
+      '<div class="mx-grid2">' +
+        '<div class="mx-card mx-lift mx-rise" style="animation-delay:40ms"><p class="mx-over">Simulation</p><h3>Et si l’âge était différent ?</h3>' +
+          '<p class="mx-sub">Survolez la courbe : probabilité estimée selon l’âge, tout le reste du profil restant identique. Pointillés : limite de classement.</p>' +
+          curve(j.age_curve, j.age, j.threshold) + '</div>' +
+        '<div class="mx-card mx-lift mx-rise" style="animation-delay:110ms"><p class="mx-over">Recommandations</p><h3 id="mx-reco-title"></h3><ul class="mx-reco" id="mx-reco"></ul></div>' +
+      '</div>' +
+      '<div class="mx-card mx-sec mx-lift mx-rise" style="animation-delay:180ms"><p class="mx-over">Historique de session</p><h3>Profils comparés</h3>' +
+        '<p class="mx-sub">Les 5 dernières analyses de cette session.</p><div id="mx-history"></div></div>' +
+      '<div class="mx-actions"><button type="button" class="mx-btn2" id="mx-print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer la fiche</button></div>' +
+      '<p class="mx-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>Estimation statistique à ne pas utiliser pour prendre une décision individuelle.</p>';
+    attachCurveHover($("#mx-curve-svg", more), j.age_curve);
+    renderReco();
+    renderHistory();
+    $("#mx-print").addEventListener("click", function () { window.print(); });
+
+    // animations : jauge, compteur, curseur et barres partent de zéro
+    requestAnimationFrame(function () {
+      var f = $(".mx-fill", out);
+      if (f) { f.style.strokeDasharray = f.dataset.len + " " + f.dataset.total; }
+      countUp($("#mx-pct", out), j.probability);
+      animateKnob($("#mx-knob", out), j.probability);
+      $$(".mx-bar", out).forEach(function (b) { b.style.width = b.dataset.w + "%"; });
+    });
+    if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) {
+      out.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+  }
+
+  function remember(j) {
+    var t = new Date().toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
+    history.unshift({label: j.profile_label + " · " + t, p: j.probability, married: j.married});
+    history = history.slice(0, 5);
+    renderHistory();
+  }
+  function renderHistory() {
+    var box = $("#mx-history");
+    if (!box) { return; }
+    box.innerHTML = '<table class="mx-table"><thead><tr><th>Profil</th><th>Probabilité</th><th>Verdict</th></tr></thead><tbody>' +
+      history.map(function (h) {
+        return '<tr><td>' + esc(h.label) + '</td><td><span class="mx-mini"><i class="' + (h.married ? "" : "no") + '" style="width:' + h.p +
+          '%"></i></span>' + num(h.p) + ' %</td><td><span class="mx-badge ' + (h.married ? "yes" : "no") + '">' +
+          (h.married ? "Marié(e)" : "Non marié(e)") + '</span></td></tr>';
+      }).join("") + '</tbody></table>';
+  }
+
+  /* ---------- analyse d'un fichier ---------- */
+  var fileInput = $("#mx-file"), runBtn = $("#mx-run");
+  var lastCsv = "";
+  fileInput.addEventListener("change", function () {
+    var f = fileInput.files && fileInput.files[0];
+    $("#mx-filename").textContent = f ? f.name : "Aucun fichier choisi";
+    runBtn.disabled = !f;
+  });
+
+  // glisser-déposer sur la zone de dépôt
+  var drop = $("#mx-drop");
+  if (drop) {
+    ["dragenter", "dragover"].forEach(function (ev) {
+      drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("is-drag"); });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("is-drag"); });
+    });
+    drop.addEventListener("drop", function (e) {
+      if (e.dataTransfer && e.dataTransfer.files.length) {
+        try { fileInput.files = e.dataTransfer.files; } catch (err) {}
+        fileInput.dispatchEvent(new Event("change"));
+      }
+    });
+    // éviter que le navigateur ouvre le fichier si on le lâche en dehors de la zone
+    ["dragover", "drop"].forEach(function (ev) {
+      window.addEventListener(ev, function (e) {
+        if (!drop.contains(e.target)) { e.preventDefault(); }
+      });
+    });
+  }
+
+  runBtn.addEventListener("click", function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) { return; }
+    $("#mx-batch-alert").hidden = true;
+    var fd = new FormData();
+    fd.append("file", f);
+    runBtn.disabled = true; runBtn.textContent = "Analyse en cours…";
+    fetch(BATCH_URL, {method: "POST", headers: {"X-CSRFToken": csrf()}, body: fd})
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) {
+          var e = j.errors && j.errors.__all__ && j.errors.__all__[0];
+          showAlert("#mx-batch-alert", e ? (e.message || e) : "Analyse impossible.");
+          $("#mx-batch-out").hidden = true;
+          return;
+        }
+        renderBatch(j);
+      })
+      .catch(function () { showAlert("#mx-batch-alert", "Le service est momentanément indisponible."); })
+      .then(function () { runBtn.disabled = false; runBtn.textContent = "Analyser le fichier"; });
+  });
+
+  function renderBatch(j) {
+    lastCsv = j.csv;
+    var maxH = Math.max.apply(null, [1].concat(j.histogram));
+    var warn = [];
+    if (j.n_skipped) { warn.push(j.n_skipped + " ligne(s) ignorée(s) (valeur manquante ou non reconnue)."); }
+    Object.keys(j.unknown || {}).forEach(function (c) { warn.push("Valeurs inconnues dans « " + c + " » : " + j.unknown[c].join(", ") + "."); });
+    if (j.truncated) { warn.push("Fichier tronqué aux " + j.max_rows + " premières lignes (" + j.n_read + " lues)."); }
+
+    var hist = j.histogram.map(function (n) {
+      return '<div class="col" title="' + n + ' profil(s)"><i style="height:0" data-h="' + (n / maxH * 100).toFixed(1) + '"></i></div>';
+    }).join("");
+    var histX = j.histogram.map(function (n, i) { return "<span>" + (i * 10) + "</span>"; }).join("");
+    var byAge = j.by_age.map(function (b) {
+      return '<div class="mx-hbar"><span>' + esc(b.label) + '</span><div class="trk"><i style="width:' + b.share + '%"></i></div>' +
+        '<span>' + num(b.share, 0) + ' % <small>(' + b.count + ')</small></span></div>';
+    }).join("");
+    var rows = j.preview.map(function (r) {
+      return '<tr><td>' + r.row + '</td><td>' + r.age + ' ans</td><td>' + esc(r.occupation) + '</td>' +
+        '<td><span class="mx-mini"><i class="' + (r.likely ? "" : "no") + '" style="width:' + r.probability + '%"></i></span>' + num(r.probability) + ' %</td>' +
+        '<td><span class="mx-badge ' + (r.likely ? "yes" : "no") + '">' + (r.likely ? "Marié(e)" : "Non marié(e)") + '</span></td></tr>';
+    }).join("");
+
+    var out = $("#mx-batch-out");
+    out.hidden = false;
+    out.innerHTML =
+      '<div class="mx-card mx-lift">' +
+        (warn.length ? '<div class="mx-alert">' + warn.map(esc).join("<br>") + '</div>' : '') +
+        '<div class="mx-kpis-batch">' +
+          '<div class="mx-kpi"><span class="mx-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><div><b>' + j.n_scored + '</b><span>profils analysés</span></div></div>' +
+          '<div class="mx-kpi"><span class="mx-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><div><b>' + num(j.share_likely) + ' %</b><span>probablement mariés (' + j.n_likely + ')</span></div></div>' +
+          '<div class="mx-kpi"><span class="mx-kpi-ic alt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg></span><div><b>' + num(j.mean_probability) + ' %</b><span>probabilité moyenne</span></div></div>' +
+        '</div>' +
+        '<div class="mx-stack" aria-hidden="true"><i style="width:' + j.share_likely + '%;background:var(--accent)"></i>' +
+          '<i style="width:' + (100 - j.share_likely) + '%;background:var(--accent-2)"></i></div>' +
+        '<div class="mx-legend"><span><b style="background:var(--accent)"></b>Probablement marié(e)</span>' +
+          '<span><b style="background:var(--accent-2)"></b>Probablement non marié(e)</span></div>' +
+      '</div>' +
+      '<div class="mx-charts">' +
+        '<div class="mx-card mx-lift"><p class="mx-over">Distribution</p><h3 style="margin-top:0">Répartition des probabilités</h3>' +
+          '<p class="mx-sub">Nombre de profils par tranche de 10 points. Pointillés : limite de classement.</p>' +
+          '<div class="mx-hist">' + hist + '<span class="cut" style="left:' + j.threshold + '%"></span></div>' +
+          '<div class="mx-hist-x">' + histX + '</div></div>' +
+        '<div class="mx-card mx-lift"><p class="mx-over">Par tranche d’âge</p><h3 style="margin-top:0">Part de « mariés » par âge</h3>' +
+          '<p class="mx-sub">Part de profils classés « marié(e) » dans chaque tranche d’âge (effectif entre parenthèses).</p>' + byAge + '</div>' +
+      '</div>' +
+      '<div class="mx-card mx-lift" style="margin-top:22px"><p class="mx-over">Détail</p><h3 style="margin-top:0">Aperçu des résultats</h3>' +
+        '<div style="overflow-x:auto"><table class="mx-table"><thead><tr><th>Ligne</th><th>Âge</th><th>Profession</th><th>Probabilité</th><th>Profil estimé</th></tr></thead><tbody>' +
+        rows + '</tbody></table></div>' +
+        '<div class="mx-actions"><button type="button" class="mx-btn2" id="mx-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Télécharger tous les résultats (CSV)</button></div>' +
+        '<p class="mx-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>Estimations statistiques : à utiliser pour orienter une conversation, jamais pour décider du sort d’une personne.</p>' +
+      '</div>';
+    $("#mx-dl").addEventListener("click", function () {
+      var blob = new Blob(["\ufeff" + lastCsv], {type: "text/csv;charset=utf-8"});
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "resultats_profil_familial.csv";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    // animation des colonnes de l'histogramme
+    requestAnimationFrame(function () {
+      $$(".mx-hist .col i", out).forEach(function (bar, k) {
+        setTimeout(function () { bar.style.height = bar.dataset.h + "%"; }, k * 30);
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

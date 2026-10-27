@@ -1,0 +1,7 @@
+<section class="path-chart-panel">
+  <h2>{% include "predictor/path_icon.html" with name="chart" %} Indice du modèle historique</h2>
+  <p class="path-hint">Ces trois pourcentages viennent du modèle entraîné sur un recensement américain d'environ 1994. Ce n'est pas une probabilité de réussite personnelle, ni une part de la population recensée.</p>
+  <p class="path-hint">{{ pathway.ranking_note }}</p>
+  {% if pathway.disagreement %}<p class="path-disagreement">{{ pathway.disagreement }}</p>{% endif %}
+  {% include "predictor/path_evidence_chart.html" %}
+</section>

@@ -59,6 +59,7 @@
     {% if interest_error %}<p class="err" role="alert">{{ interest_error }}</p>{% endif %}
 
     <h2 class="path-section-title"><span class="path-section-num">3</span> Ce que vous voulez explorer <span class="path-optional">(facultatif)</span></h2>
+    <p class="path-hint">Ce texte est recopié sur la fiche. Il ne sert pas à classer les pistes ni à rédiger les recommandations.</p>
     <label class="field path-note">
       <span>Quelques mots libres</span>
       <textarea class="input" name="note" rows="3" maxlength="280" placeholder="Exemple : je veux un métier manuel, ou poursuivre après le bac…">{{ note }}</textarea>
@@ -77,8 +78,6 @@
       <label class="field"><span>{{ form.race.label }}</span>{{ form.race }}{% if form.race.errors %}<span class="err">{{ form.race.errors|join:" " }}</span>{% endif %}</label>
       <label class="field"><span>{{ form.native_country.label }}</span>{{ form.native_country }}{% if form.native_country.errors %}<span class="err">{{ form.native_country.errors|join:" " }}</span>{% endif %}</label>
       <label class="field"><span>{{ form.income.label }}</span>{{ form.income }}{% if form.income.errors %}<span class="err">{{ form.income.errors|join:" " }}</span>{% endif %}</label>
-      <label class="field"><span>{{ form.capital_gain.label }}</span>{{ form.capital_gain }}{% if form.capital_gain.errors %}<span class="err">{{ form.capital_gain.errors|join:" " }}</span>{% endif %}</label>
-      <label class="field"><span>{{ form.capital_loss.label }}</span>{{ form.capital_loss }}{% if form.capital_loss.errors %}<span class="err">{{ form.capital_loss.errors|join:" " }}</span>{% endif %}</label>
     </div>
     <button class="btn path-submit" type="submit">Voir les pistes recommandées</button>
   </form>
@@ -99,22 +98,30 @@
         <span>Études</span>
         <b>{{ pathway.education_label }}</b>
       </div>
-      <div class="path-summary-item path-summary-item--model">
-        <span>Indice modèle le plus élevé</span>
-        <b>{{ pathway.model_top }} · {{ pathway.model_top_probability }} %</b>
+      <div class="path-summary-item">
+        <span>Âge</span>
+        <b>{{ pathway.age }} ans</b>
       </div>
     </div>
-
-    <div class="path-chart-panel">
-      <h3>{% include "predictor/path_icon.html" with name="chart" %} Indice du modèle historique</h3>
-      {% include "predictor/path_evidence_chart.html" %}
+    <div class="path-chip-row path-chip-row--page">
+      {% for item in pathway.interest_labels %}<span class="path-chip">{{ item }}</span>{% endfor %}
     </div>
 
     <div class="path-card-list">
       {% for direction in pathway.directions %}
-        {% include "predictor/path_direction_card.html" %}
+        {% include "predictor/path_direction_card.html" with show_skills=True %}
       {% endfor %}
     </div>
+
+    {% include "predictor/path_model_panel.html" %}
+
+    {% if pathway.note %}
+    <section class="path-note-block">
+      <h3>Note personnelle</h3>
+      <p class="path-note-display">« {{ pathway.note }} »</p>
+      <p class="path-hint">{{ pathway.note_notice }}</p>
+    </section>
+    {% endif %}
 
     <p class="no-print path-result-cta"><a class="btn" href="{% url 'occupation_sheet' %}">Voir ma voie recommandée</a></p>
   </section>

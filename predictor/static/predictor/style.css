@@ -177,7 +177,13 @@ nav{flex-wrap:wrap;justify-content:flex-end}
 .path-card--White-collar{box-shadow:inset 6px 0 0 var(--path-office)}
 .path-card--Blue-collar{box-shadow:inset 6px 0 0 var(--path-tech)}
 .path-card--Service{box-shadow:inset 6px 0 0 var(--path-service)}
-.path-card-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-bottom:12px}
+.path-card-head{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;margin-bottom:12px}
+.path-card--secondary{background:#fbfaf6}
+.path-card--secondary .path-card-kicker{color:#8a5a32}
+.path-disagreement{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#f8e1da;color:var(--ink);font-size:14px}
+.path-skills,.path-note-block,.path-appendix{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;margin:0 0 18px}
+.path-skills h2,.path-note-block h2,.path-note-block h3,.path-appendix h2{margin:0 0 8px;font-size:20px}
+.path-note-label{margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .path-card-rank{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 16px Fraunces,serif;background:#efe7d6}
 .path-card--White-collar .path-card-rank{background:#d9f0e8;color:var(--path-office)}
 .path-card--Blue-collar .path-card-rank{background:#e7eef6;color:var(--path-tech)}
@@ -217,7 +223,6 @@ nav{flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:700px){
   .path-grid,.path-goal,.path-interests,.path-summary,.path-profile,.path-card-grid,.path-chart-row{grid-template-columns:1fr}
   .path-card-head{grid-template-columns:auto 1fr}
-  .path-card-score{grid-column:1 / -1;text-align:left}
   .path-alert{grid-template-columns:1fr}
 }
 

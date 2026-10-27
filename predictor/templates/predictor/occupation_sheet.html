@@ -5,14 +5,15 @@
   @page { size: A4; margin: 12mm; }
   @media print {
     .top, footer, .no-print, .occ-nav, .btn, .path-actions { display: none !important; }
-    body { background: #fff; }
+    body { background: #fff; color: #1c1915; }
     main { max-width: none; padding: 0; }
     .path-sheet { border: 0; box-shadow: none; padding: 0; }
     .path-sheet h1 { font-size: 22px; margin: 0 0 8px; }
     .path-sheet h2, .path-sheet h3 { font-size: 15px; margin: 8px 0 4px; }
     .path-sheet p, .path-sheet li, .path-sheet td, .path-sheet th, .path-chip { font-size: 11px; }
-    .path-card, .path-alert, .path-chart-panel, .card { break-inside: avoid; }
-    .path-meter-fill, .path-chart-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .path-sheet-limits, .path-card, .path-chart-panel, .path-skills, .path-note-block { break-inside: avoid; page-break-inside: avoid; }
+    .path-appendix { break-inside: auto; page-break-inside: auto; }
+    .path-swatch, .path-chart-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   }
 </style>
 <section class="occ path path-sheet">
@@ -24,7 +25,7 @@
       <button class="btn path-print-btn" type="button" onclick="window.print()">{% include "predictor/path_icon.html" with name="print" %} Imprimer / Enregistrer en PDF</button>
       <a class="back" href="{% url 'occupation' %}">Modifier le profil</a>
     </p>
-    <p>Cette fiche reprend les pistes déjà calculées. Elle n'est pas recalculée à l'ouverture.</p>
+    <p>Cette fiche reprend les pistes déjà calculées. Elle n'est pas recalculée à l'ouverture. L'ordre vient de vos réponses, pas du modèle.</p>
   </header>
 
   <div class="path-summary">
@@ -37,38 +38,60 @@
       <b>{{ pathway.education_label }}</b>
     </div>
     <div class="path-summary-item">
-      <span>Revenu (modèle)</span>
-      <b>{{ pathway.income_label }}</b>
-    </div>
-    <div class="path-summary-item path-summary-item--model">
-      <span>Indice modèle le plus élevé</span>
-      <b>{{ pathway.model_top }} · {{ pathway.model_top_probability }} %</b>
+      <span>Âge</span>
+      <b>{{ pathway.age }} ans</b>
     </div>
   </div>
-
   {% if pathway.interest_labels %}
   <div class="path-chip-row path-chip-row--page">
     {% for item in pathway.interest_labels %}<span class="path-chip">{{ item }}</span>{% endfor %}
   </div>
   {% endif %}
-  {% if pathway.note %}<p class="path-note-display">« {{ pathway.note }} »</p>{% endif %}
 
-  <section class="path-chart-panel">
-    <h2>{% include "predictor/path_icon.html" with name="chart" %} Indice du modèle historique</h2>
-    <p class="path-hint">Probabilités estimées pour ce profil. Elles ne décident pas seules la shortlist et ne sont pas des parts de la population recensée.</p>
-    {% include "predictor/path_evidence_chart.html" %}
-  </section>
+  <aside class="path-alert path-sheet-limits">
+    <div class="path-alert-icon">{% include "predictor/path_icon.html" with name="warning" %}</div>
+    <div>
+      <h2>Limites à lire avant les pistes</h2>
+      <ul class="path-alert-list">
+        <li>Source : recensement américain d'environ 1994, pas le marché du travail tunisien d'aujourd'hui.</li>
+        <li>Ni offre d'emploi, ni admission, ni conseil garanti, ni établissement nommé.</li>
+        <li>La famille Services est reconnue environ {{ pathway.service_recall }} % du temps dans l'évaluation tenue à l'écart.</li>
+        <li>Les pistes proposent des types de formations à investiguer, pas un placement.</li>
+      </ul>
+      <p class="path-alert-note">{{ pathway.family_note }}</p>
+    </div>
+  </aside>
 
   <section class="path-card-list">
     <h2 class="path-section-title">Directions recommandées</h2>
     {% for direction in pathway.directions %}
       {% include "predictor/path_direction_card.html" %}
     {% endfor %}
-    <p class="path-alert-note">{{ pathway.family_note }}</p>
   </section>
 
-  <section class="card">
-    <h2>Profil transmis au modèle</h2>
+  {% if pathway.skill_lines %}
+  <section class="path-skills">
+    <h2>Compétences à investiguer</h2>
+    <p class="path-hint">Liées aux intérêts qui portent une direction recommandée. Ce n'est pas une mesure de ce qui vous manque.</p>
+    <ul class="path-mini-list">
+      {% for item in pathway.skill_lines %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% include "predictor/path_model_panel.html" %}
+
+  {% if pathway.note %}
+  <section class="path-note-block">
+    <h2>Note personnelle</h2>
+    <p class="path-note-display">« {{ pathway.note }} »</p>
+    <p class="path-hint">{{ pathway.note_notice }}</p>
+  </section>
+  {% endif %}
+
+  <section class="card path-appendix">
+    <h2>Annexe technique : profil transmis au modèle</h2>
+    <p class="path-hint">Ces champs documentent le calcul des probabilités. Les gains et les pertes en capital sont envoyés à 0 et ne sont pas demandés. Ils ne classent pas les pistes ci-dessus.</p>
     <dl class="path-profile">
       {% for row in pathway.profile %}
       <div>
@@ -78,19 +101,5 @@
       {% endfor %}
     </dl>
   </section>
-
-  <aside class="path-alert">
-    <div class="path-alert-icon">{% include "predictor/path_icon.html" with name="warning" %}</div>
-    <div>
-      <h2>Limites</h2>
-      <ul class="path-alert-list">
-        <li>Recensement américain ~1994</li>
-        <li>Pas le marché du travail tunisien d'aujourd'hui</li>
-        <li>Ni offres d'emploi, ni conseils garantis, ni établissement nommé</li>
-        <li>Services reconnus ~{{ pathway.service_recall }} % en évaluation tenue à l'écart</li>
-        <li>La couche de parcours propose des types de formations à investiguer, pas un placement</li>
-      </ul>
-    </div>
-  </aside>
 </section>
 {% endblock %}

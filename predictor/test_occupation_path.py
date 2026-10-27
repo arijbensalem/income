@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.test import Client, SimpleTestCase, TestCase
 from django.urls import NoReverseMatch, reverse
 
-from predictor.career_routes import score_families
+from predictor.career_routes import build_direction, rank_families, score_families
 from predictor.models import OccupationAccount
 from predictor.occupation_auth import SESSION_KEY
 from predictor.occupation_path import MODEL_FEATURES, PATH_KEY
@@ -74,6 +74,58 @@ class OccupationArtifactTests(SimpleTestCase):
         shortlist = score_families("work", ["craft", "machines"], 9)
         self.assertEqual(shortlist[0], "Blue-collar")
         self.assertIn("Blue-collar", shortlist)
+
+    def test_career_change_follows_interests_only(self):
+        self.assertEqual(score_families("change", ["craft"], 13), ["Blue-collar"])
+        ranked = rank_families("change", ["security", "craft"], 13)
+        self.assertEqual([row["role"] for row in ranked], ["primary", "primary"])
+        self.assertEqual([row["label"] for row in ranked], ["Blue-collar", "Service"])
+
+    def test_goal_only_direction_stays_secondary(self):
+        ranked = rank_families("work", ["craft"], 9)
+        self.assertEqual(ranked[0]["role"], "primary")
+        self.assertEqual(ranked[0]["label"], "Blue-collar")
+        self.assertEqual([(row["label"], row["role"]) for row in ranked[1:]], [("Service", "secondary")])
+
+    def test_examples_and_steps_follow_the_selected_interest(self):
+        support = build_direction(
+            "White-collar", "work", ["tech_support"], 13, "Licence (Bachelors)", 22,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 0.0},
+        )
+        self.assertEqual(support["examples"], ["Support technique"])
+        self.assertIn("dépannage", " ".join(support["next_steps"]))
+        self.assertNotIn("Vente", support["examples"])
+        security = build_direction(
+            "Service", "work", ["security"], 9, "Baccalauréat / HS-grad", 30,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 1.0},
+        )
+        steps = " ".join(security["next_steps"])
+        self.assertIn("protection", steps)
+        self.assertNotIn("Clarifier si vous visez", steps)
+        self.assertEqual(security["examples"], ["Services de protection"])
+
+    def test_education_label_and_age_change_the_training_text(self):
+        licence = build_direction(
+            "White-collar", "studies", ["office"], 13, "Licence (Bachelors)", 22,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 1.0},
+        )
+        doctorate = build_direction(
+            "White-collar", "studies", ["office"], 16, "Doctorat", 22,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 1.0},
+        )
+        self.assertIn("Licence (Bachelors)", " ".join(licence["training"]))
+        self.assertIn("Doctorat", " ".join(doctorate["training"]))
+        self.assertNotEqual(licence["training"], doctorate["training"])
+        young = build_direction(
+            "Blue-collar", "studies", ["craft"], 9, "Baccalauréat / HS-grad", 18,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 0.5},
+        )
+        adult = build_direction(
+            "Blue-collar", "studies", ["craft"], 9, "Baccalauréat / HS-grad", 34,
+            {"role": "primary", "interest_points": 2.0, "goal_points": 0.5},
+        )
+        self.assertTrue(any("moins de 20 ans" in line for line in young["training"]))
+        self.assertFalse(any("moins de 20 ans" in line for line in adult["training"]))
 
 
 class OccupationPathTests(TestCase):
@@ -180,7 +232,11 @@ class OccupationPathTests(TestCase):
         payload = predict.call_args.args[0]
         self.assertEqual(list(payload), MODEL_FEATURES)
         self.assertEqual(payload["education-num"], 9)
+        self.assertEqual(payload["capital-gain"], 0)
+        self.assertEqual(payload["capital-loss"], 0)
         page = _page(response)
+        self.assertNotIn("Gains en capital", page)
+        self.assertNotIn("Pertes en capital", page)
         self.assertIn("Pistes à explorer", page)
         self.assertIn(LABELS_FR["Blue-collar"], page)
         self.assertIn('data-family="Blue-collar"', page)
@@ -191,6 +247,19 @@ class OccupationPathTests(TestCase):
         self.assertIn("58,0 %", page)
         self.assertIn("indice", page.lower())
         self.assertNotIn("Écart en points", page)
+        self.assertNotIn("path-card-score", page)
+        self.assertNotIn("path-meter", page)
+        self.assertIn("ne sert pas à classer", page)
+        self.assertIn("n'a pas été utilisée pour classer", page)
+        self.assertIn("Ce n'est pas l'ordre des pistes", page)
+        self.assertLess(page.index("path-card path-card--"), page.index("path-chart-panel"))
+        first = page.index("path-card path-card--")
+        second = page.index("path-card path-card--", first + 1)
+        first_card = page[first:second]
+        self.assertIn('data-role="primary"', first_card)
+        self.assertIn("Conduite de machines", first_card)
+        self.assertNotIn("Manutention", first_card)
+        self.assertIn("Piste secondaire", page)
         self.assertIn("1994", page)
         self.assertIn("tunisien", page)
         self.assertIn("15,7", page)
@@ -224,6 +293,14 @@ class OccupationPathTests(TestCase):
         self.assertIn("Imprimer / Enregistrer en PDF", page)
         self.assertIn("@media print", page)
         self.assertIn("n'est pas recalculée", page)
+        self.assertIn("n'a pas été utilisée pour classer", page)
+        self.assertNotIn("Revenu (modèle)", page)
+        self.assertNotIn("path-card-score", page)
+        self.assertLess(page.index("Limites à lire avant les pistes"), page.index("Directions recommandées"))
+        self.assertLess(page.index("Directions recommandées"), page.index("Compétences à investiguer"))
+        self.assertLess(page.index("Compétences à investiguer"), page.index("Indice du modèle historique"))
+        self.assertLess(page.index("Indice du modèle historique"), page.index("Note personnelle"))
+        self.assertLess(page.index("Note personnelle"), page.index("profil transmis au modèle"))
 
     def test_missing_or_invalid_sheet_returns_to_the_explorer(self):
         missing = self.client.get(reverse("occupation_sheet"), follow=True)

@@ -262,8 +262,6 @@ class OccupationForm(forms.Form):
     age = forms.IntegerField(label="Âge", min_value=17, max_value=90)
     hours_per_week = forms.IntegerField(label="Heures travaillées / semaine", min_value=1, max_value=99)
     education_num = forms.TypedChoiceField(label="Niveau d'études", choices=EDUCATION, coerce=int)
-    capital_gain = forms.IntegerField(label="Gains en capital (USD)", min_value=0, max_value=99999, initial=0)
-    capital_loss = forms.IntegerField(label="Pertes en capital (USD)", min_value=0, max_value=4356, initial=0)
     workclass = forms.ChoiceField(label="Secteur d'emploi")
     marital_status = forms.ChoiceField(label="Situation maritale")
     relationship = forms.ChoiceField(label="Rôle dans le foyer")
@@ -331,8 +329,8 @@ class OccupationForm(forms.Form):
             "relationship": d["relationship"],
             "race": d["race"],
             "sex": d["sex"],
-            "capital-gain": d["capital_gain"],
-            "capital-loss": d["capital_loss"],
+            "capital-gain": 0,
+            "capital-loss": 0,
             "hours-per-week": d["hours_per_week"],
             "native-country": d["native_country"],
             "income": d["income"],

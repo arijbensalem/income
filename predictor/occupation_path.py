@@ -14,7 +14,7 @@ from .career_routes import (
     build_direction,
     parse_goal,
     parse_interests,
-    score_families,
+    rank_families,
 )
 from .forms import EDUCATION, OccupationForm
 from .ml import predict_occupation
@@ -47,6 +47,14 @@ SHEET_MISSING = (
     "« Trouver mon parcours », puis consultez à nouveau cette fiche."
 )
 NOTE_MAX = 280
+NOTE_NOTICE = (
+    "Cette note est conservée pour vous. Elle n'a pas été utilisée pour classer "
+    "les pistes ni pour rédiger les recommandations."
+)
+RANKING_NOTE = (
+    "L'ordre des recommandations suit vos centres d'intérêt, puis votre objectif. "
+    "Les probabilités du modèle ne changent pas cet ordre."
+)
 
 
 def service_recall_text():
@@ -101,24 +109,47 @@ def parse_note(raw):
     return text, None
 
 
+def _skill_lines(directions):
+    lines = []
+    for direction in directions:
+        for line in direction["skills"]:
+            if line not in lines:
+                lines.append(line)
+    return lines
+
+
+def _disagreement(prediction_label, first_label, by_label):
+    if prediction_label == first_label:
+        return ""
+    return (
+        f"Le modèle historique place « {LABELS_FR[prediction_label]} » en tête "
+        f"({by_label[prediction_label]['text']} %). "
+        "Ce n'est pas l'ordre des pistes : celui-ci suit vos centres d'intérêt et votre objectif."
+    )
+
+
 def build_recommendation(form, goal, interests, note):
     model_input = form.model_input()
     if set(model_input) != set(MODEL_FEATURES):
         raise ValueError("Le profil transmis au modèle est incomplet.")
     education_num = int(model_input["education-num"])
-    shortlist_labels = score_families(goal, interests, education_num)
+    age = int(model_input["age"])
+    education_label = EDUCATION_LABELS[education_num]
+    ranked = rank_families(goal, interests, education_num)
     prediction = predict_occupation(model_input)
     evidence = _ordered(prediction)
     by_label = {row["label"]: row for row in evidence}
     directions = [
         build_direction(
-            family,
+            item["label"],
             goal,
             interests,
             education_num,
-            by_label[family]["probability"],
+            education_label,
+            age,
+            item,
         )
-        for family in shortlist_labels
+        for item in ranked
     ]
     return {
         "goal": goal,
@@ -126,18 +157,30 @@ def build_recommendation(form, goal, interests, note):
         "interests": interests,
         "interest_labels": [INTEREST_LABELS[tag] for tag in interests],
         "note": note,
+        "note_notice": NOTE_NOTICE,
+        "ranking_note": RANKING_NOTE,
         "profile": profile_rows(form),
+        "age": age,
         "education_num": education_num,
-        "education_label": EDUCATION_LABELS[education_num],
+        "education_label": education_label,
         "income_code": str(model_input["income"]),
         "income_label": str(_display(form, "income")),
         "directions": directions,
+        "skill_lines": _skill_lines(directions),
         "evidence": evidence,
+        "model_top_label": prediction["label"],
         "model_top": LABELS_FR[prediction["label"]],
         "model_top_probability": by_label[prediction["label"]]["text"],
+        "disagreement": _disagreement(prediction["label"], directions[0]["label"], by_label),
         "service_recall": service_recall_text(),
         "family_note": FAMILY_NOTE,
     }
+
+
+def _points_ok(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return value >= 0
 
 
 def pathway_is_valid(data):
@@ -155,6 +198,16 @@ def pathway_is_valid(data):
         return False
     if not isinstance(data.get("note"), str) or len(data["note"]) > NOTE_MAX:
         return False
+    if data.get("note_notice") != NOTE_NOTICE or data.get("ranking_note") != RANKING_NOTE:
+        return False
+    if not isinstance(data.get("disagreement"), str):
+        return False
+    try:
+        age = int(data["age"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not 17 <= age <= 90:
+        return False
     try:
         education_num = int(data["education_num"])
     except (KeyError, TypeError, ValueError):
@@ -164,7 +217,7 @@ def pathway_is_valid(data):
     if data.get("education_label") != EDUCATION_LABELS[education_num]:
         return False
     profile = data.get("profile")
-    if not isinstance(profile, list) or len(profile) != 12:
+    if not isinstance(profile, list) or len(profile) != 10:
         return False
     for row in profile:
         if not isinstance(row, dict):
@@ -185,13 +238,30 @@ def pathway_is_valid(data):
             return False
         if not 0 <= probability <= 100:
             return False
+    skill_lines = data.get("skill_lines")
+    if not isinstance(skill_lines, list) or any(not isinstance(line, str) or not line for line in skill_lines):
+        return False
+    if data.get("model_top_label") not in FAMILY_ORDER:
+        return False
+    if data.get("model_top") != LABELS_FR[data["model_top_label"]]:
+        return False
     directions = data.get("directions")
     if not isinstance(directions, list) or not 1 <= len(directions) <= 3:
         return False
+    seen_secondary = False
     for direction in directions:
         if direction.get("label") not in FAMILY_ORDER:
             return False
         if direction.get("label_fr") != LABELS_FR[direction["label"]]:
+            return False
+        role = direction.get("role")
+        if role not in ("primary", "secondary"):
+            return False
+        if role == "secondary":
+            seen_secondary = True
+        elif seen_secondary:
+            return False
+        if direction.get("role_label") not in ("Direction recommandée", "Piste secondaire"):
             return False
         if not isinstance(direction.get("why"), str) or not direction["why"]:
             return False
@@ -200,6 +270,13 @@ def pathway_is_valid(data):
         if not isinstance(direction.get("training"), list) or not direction["training"]:
             return False
         if not isinstance(direction.get("next_steps"), list) or not direction["next_steps"]:
+            return False
+        skills = direction.get("skills")
+        if not isinstance(skills, list) or any(not isinstance(line, str) or not line for line in skills):
+            return False
+        if not isinstance(direction.get("matched_interests"), list):
+            return False
+        if not _points_ok(direction.get("interest_points")) or not _points_ok(direction.get("goal_points")):
             return False
     if data.get("service_recall") != service_recall_text():
         return False

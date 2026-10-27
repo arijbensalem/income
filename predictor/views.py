@@ -1,5 +1,9 @@
 import json
-from io import BytesIO
+from io import BytesIO, StringIO
+from pathlib import Path
+
+import joblib
+import pandas as pd
 from collections import Counter
 from datetime import timedelta
 
@@ -609,6 +613,18 @@ def relationship_analytics_api(request):
     return JsonResponse(data)
 
 
+def _csv_value(v):
+    """Valeur d'une cellule CSV pour le formulaire : 39.0 -> "39", vide -> ""."""
+    if pd.isna(v):
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
+
+
+BATCH_MAX_ROWS = 2000      # import limité pour garder une réponse rapide pendant la démo
+
+
 @login_required
 @require_POST
 def relationship_batch_api(request):
@@ -618,31 +634,43 @@ def relationship_batch_api(request):
     
     try:
         file = request.FILES['file']
-        df = pd.read_csv(file)
-        
-        # Vérifier que les colonnes nécessaires existent
-        required_cols = set(RelationshipForm().fields.keys()) - {'csrfmiddlewaretoken'}
-        df_cols = set(df.columns)
-        
-        # Convertir les noms de colonnes (tirets -> underscores)
-        df.columns = [col.replace("-", "_") for col in df.columns]
-        required_cols = {col.replace("-", "_") for col in required_cols}
-        
-        missing = required_cols - df_cols
+        # Séparateur détecté automatiquement (« , » ou « ; » d'Excel en français), BOM accepté
+        raw = file.read()
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:          # fichier enregistré par Excel (Windows)
+            text = raw.decode("cp1252")
+        df = pd.read_csv(StringIO(text), sep=None, engine="python", skipinitialspace=True)
+
+        # Noms de colonnes normalisés : « hours-per-week », « Hours per week » -> « hours_per_week »
+        df.columns = [str(col).strip().lower().replace("-", "_").replace(" ", "_") for col in df.columns]
+        required_cols = set(RelationshipForm().fields.keys())
+        missing = required_cols - set(df.columns)
         if missing:
             return JsonResponse({
                 "ok": False,
-                "error": f"Colonnes manquantes: {', '.join(missing)}"
+                "error": ("Aucune colonne reconnue" if missing == required_cols
+                          else "Colonnes manquantes : " + ", ".join(sorted(missing)))
+                         + ". Colonnes attendues : " + ", ".join(sorted(required_cols))
+                         + ". Utilisez le modèle de fichier CSV.",
             }, status=400)
-        
+
+        # Valeurs texte nettoyées (espaces, « ? » = valeur manquante) ; taille limitée pour rester rapide
+        df = df[sorted(required_cols)]
+        for col in df.select_dtypes(include="object").columns:
+            df[col] = df[col].str.strip().replace("?", pd.NA)
+        truncated = len(df) > BATCH_MAX_ROWS
+        df = df.head(BATCH_MAX_ROWS).reset_index(drop=True)
+
         # Traiter chaque ligne et compter par segment
         results = []
         segment_counts = {}
-        
+        to_save = []
+
         for idx, row in df.iterrows():
             try:
                 payload = row.to_dict()
-                form = RelationshipForm({k: str(v) if pd.notna(v) else '' for k, v in payload.items()})
+                form = RelationshipForm({k: _csv_value(v) for k, v in payload.items()})
                 
                 if form.is_valid():
                     result = predict_relationship(form.model_input())
@@ -665,13 +693,14 @@ def relationship_batch_api(request):
                     except (ValueError, TypeError):
                         income = 40000
                     
-                    RelationshipPrediction.objects.create(
+                    to_save.append(RelationshipPrediction(
                         predicted_relationship=relationship,
                         probability=result['probability'],
                         income=income,
-                        profile_data=payload
-                    )
-                    
+                        profile_data={k: (None if pd.isna(v) else v.item() if hasattr(v, "item") else v)
+                                      for k, v in payload.items()},
+                    ))
+
                     results.append({
                         "row": idx + 1,
                         "status": "success",
@@ -691,6 +720,8 @@ def relationship_batch_api(request):
                     "error": str(e)
                 })
         
+        RelationshipPrediction.objects.bulk_create(to_save)
+
         # Résumé
         success_count = sum(1 for r in results if r['status'] == 'success')
         error_count = sum(1 for r in results if r['status'] == 'error')
@@ -727,7 +758,9 @@ def relationship_batch_api(request):
             "campaigns": sorted(campaigns, key=lambda x: x['count'], reverse=True),
             "total_budget": total_budget,
             "quality_score": round((success_count / len(results)) * 100, 1) if len(results) > 0 else 0,
-            "results": results
+            "truncated": truncated,
+            "max_rows": BATCH_MAX_ROWS,
+            "results": results[:200],
         })
     
     except Exception as e:

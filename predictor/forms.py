@@ -404,6 +404,9 @@ class RelationshipForm(forms.Form):
             "Portugal": "Portugal", "Puerto-Rico": "Porto Rico", "Scotland": "Écosse",
             "South": "Afrique du Sud", "Taiwan": "Taiwan", "Thailand": "Thaïlande",
             "Trinadad&Tobago": "Trinité-et-Tobago", "Vietnam": "Vietnam",
+            "Holand-Netherlands": "Pays-Bas", "Honduras": "Honduras", "Laos": "Laos",
+            "Outlying-US(Guam-USVI-etc)": "Territoires américains (Guam…)", "Peru": "Pérou",
+            "Philippines": "Philippines", "Yugoslavia": "Yougoslavie",
         }
 
         cat_choices = {

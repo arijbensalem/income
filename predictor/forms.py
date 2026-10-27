@@ -61,6 +61,40 @@ if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     options = config.get("options", {})
 
+# Libellés français ; la valeur envoyée au modèle reste la valeur brute du dataset.
+MARRIED_LABELS = {
+    "workclass": {
+        "Private": "Secteur privé", "Self-emp-not-inc": "Indépendant", "Self-emp-inc": "Chef d'entreprise",
+        "Federal-gov": "Fonction publique (État)", "State-gov": "Fonction publique (région)",
+        "Local-gov": "Fonction publique (commune)", "Without-pay": "Non rémunéré",
+        "Never-worked": "N'a jamais travaillé",
+    },
+    "occupation": {
+        "Adm-clerical": "Employé administratif", "Armed-Forces": "Armée", "Craft-repair": "Artisan / réparation",
+        "Exec-managerial": "Cadre / manager", "Farming-fishing": "Agriculture / pêche",
+        "Handlers-cleaners": "Manutention / nettoyage", "Machine-op-inspct": "Opérateur machine",
+        "Other-service": "Services (restauration, aide…)", "Priv-house-serv": "Employé de maison",
+        "Prof-specialty": "Profession intellectuelle", "Protective-serv": "Sécurité / protection",
+        "Sales": "Commerce / vente", "Tech-support": "Support technique", "Transport-moving": "Transport / livraison",
+    },
+    "sex": {"Male": "Homme", "Female": "Femme"},
+    "race": {
+        "White": "Blanc", "Black": "Noir", "Asian-Pac-Islander": "Asiatique / Îlien du Pacifique",
+        "Amer-Indian-Eskimo": "Amérindien / Esquimau", "Other": "Autre",
+    },
+    "native-country": {
+        "United-States": "États-Unis", "Cambodia": "Cambodge", "Canada": "Canada", "China": "Chine",
+        "Columbia": "Colombie", "Cuba": "Cuba", "Dominican-Republic": "République dominicaine",
+        "Ecuador": "Équateur", "El-Salvador": "Salvador", "England": "Angleterre", "France": "France",
+        "Germany": "Allemagne", "Greece": "Grèce", "Guatemala": "Guatemala", "Haiti": "Haïti",
+        "Hong": "Hong Kong", "Hungary": "Hongrie", "India": "Inde", "Iran": "Iran", "Ireland": "Irlande",
+        "Italy": "Italie", "Jamaica": "Jamaïque", "Japan": "Japon", "Mexico": "Mexique",
+        "Nicaragua": "Nicaragua", "Poland": "Pologne", "Portugal": "Portugal", "Puerto-Rico": "Porto Rico",
+        "Scotland": "Écosse", "South": "Corée du Sud", "Taiwan": "Taïwan", "Thailand": "Thaïlande",
+        "Trinadad&Tobago": "Trinité-et-Tobago", "Vietnam": "Viêt Nam", "Other": "Autre",
+    },
+}
+
 
 class MarriedForm(forms.Form):
     age = forms.IntegerField(label="Âge", min_value=17, max_value=90)
@@ -71,9 +105,12 @@ class MarriedForm(forms.Form):
 
     workclass = forms.ChoiceField(label="Secteur d'emploi")
     occupation = forms.ChoiceField(label="Profession")
-    race = forms.ChoiceField(label="Race")
+    race = forms.ChoiceField(label="Origine")
     sex = forms.ChoiceField(label="Sexe")
     native_country = forms.ChoiceField(label="Pays d'origine")
+    income = forms.ChoiceField(
+        label="Revenu annuel", initial="<=50K",
+        choices=[("<=50K", "50 000 $ ou moins par an"), (">50K", "Plus de 50 000 $ par an")])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,7 +124,10 @@ class MarriedForm(forms.Form):
         }
         for field, key in mapping.items():
             if key in married_opts:
-                self.fields[field].choices = [("", "Choisir…")] + [(v, str(v).replace("-", " ")) for v in married_opts[key]]
+                labels = MARRIED_LABELS.get(key, {})
+                choices = [(v, labels.get(v, str(v).replace("-", " "))) for v in married_opts[key]]
+                choices.sort(key=lambda c: c[1])
+                self.fields[field].choices = [("", "Choisir…")] + choices
         for f in self.fields.values():
             f.widget.attrs["class"] = "input"
 
@@ -104,8 +144,9 @@ class MarriedForm(forms.Form):
             "capital-loss": d["capital_loss"],
             "hours-per-week": d["hours_per_week"],
             "native-country": d["native_country"],
-            "income": "<=50K",
+            "income": d["income"],
         }
+
 
 
 # ----------------------------------------------------------------------

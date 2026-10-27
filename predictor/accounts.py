@@ -1,5 +1,9 @@
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_not_required
+try:
+    from django.contrib.auth.decorators import login_not_required
+except ImportError:              # Django < 5.1
+    def login_not_required(view):
+        return view
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import redirect, render
 

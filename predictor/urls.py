@@ -26,10 +26,6 @@ urlpatterns = [
     path("api/sous-evalue/", require_model_login("sous_evalue")(views.sous_evalue_api), name="sous_evalue_api"),
     path("diplomes-sous-evalues/connexion/", model_login("sous_evalue"), name="sous_evalue_login"),
 
-    path("temps-de-travail/", require_model_login("hours")(views.hours_page), name="hours"),
-    path("api/hours/", require_model_login("hours")(views.hours_api), name="hours_api"),
-    path("temps-de-travail/connexion/", model_login("hours"), name="hours_login"),
-
     path("prediction-profession/", views.occupation_page, name="occupation"),
     path("prediction-profession/fiche/", views.occupation_sheet, name="occupation_sheet"),
     path("prediction-profession/connexion/", occupation_login, name="occupation_login"),

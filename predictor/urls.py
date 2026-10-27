@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 
-from . import jeune_tools, views
+from . import jeune_tools, views, views_income
 from .accounts import StyledAuthenticationForm, register
 from .model_auth import model_login, require_model_login
 from .occupation_auth import occupation_login, occupation_logout, occupation_register
@@ -10,8 +10,11 @@ from .occupation_auth import occupation_login, occupation_logout, occupation_reg
 urlpatterns = [
     path("", views.home, name="home"),
 
-    path("prediction-revenu/", require_model_login("income")(views.income_page), name="income"),
-    path("api/income/", require_model_login("income")(views.income_api), name="income_api"),
+    path("prediction-revenu/", require_model_login("income")(views_income.income_page), name="income"),
+    path("api/income/", require_model_login("income")(views_income.income_api), name="income_api"),
+    path("ciblage-premium/", require_model_login("income")(views_income.ciblage_page), name="ciblage"),
+    path("api/ciblage/", require_model_login("income")(views_income.ciblage_api), name="ciblage_api"),
+    path("ciblage-premium/modele.csv", require_model_login("income")(views_income.ciblage_modele), name="ciblage_modele"),
     path("prediction-revenu/connexion/", model_login("income"), name="income_login"),
 
     path("married/", require_model_login("married")(views.married_view), name="married"),

@@ -1,17 +1,28 @@
 {% extends "predictor/base.html" %}
-{% block title %}Prédiction du revenu · Atelier ML{% endblock %}
+{% load static %}
+{% block title %}Potentiel client · Atelier ML{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'predictor/income_pro.css' %}">{% endblock %}
 {% block content %}
 <a class="back" href="{% url 'home' %}">← Accueil</a>
-<h1 class="page-title">Prédiction du <em>revenu</em></h1>
-<p class="lead small">Renseignez le profil, le modèle estime la probabilité d'un revenu supérieur à 50&nbsp;000&nbsp;$ / an.</p>
+<nav class="subtabs" aria-label="Prédire un revenu">
+  <a href="{% url 'income' %}" class="active" aria-current="page">Un client</a>
+  <a href="{% url 'ciblage' %}">Portefeuille clients</a>
+</nav>
+<h1 class="page-title">Potentiel <em>revenu</em> d'un client</h1>
+<p class="lead small">Décrivez un client : l'outil évalue son potentiel, le range dans un segment et vous propose les offres à lui présenter.</p>
 
 <div class="grid">
   <form id="income-form" class="card" novalidate>
     {% csrf_token %}
-    <h2>Profil</h2>
+    <h2>Profil du client</h2>
+    <div class="examples">Exemples :
+      <button type="button" class="chip" data-example="cadre">Cadre confirmé</button>
+      <button type="button" class="chip" data-example="intermediaire">Profil intermédiaire</button>
+      <button type="button" class="chip" data-example="jeune">Jeune diplômé</button>
+    </div>
     <div class="fields">
       {% for field in form %}
-      <label class="field {% if field.name in 'workclass occupation' %}{% endif %}">
+      <label class="field">
         <span>{{ field.label }}</span>
         {{ field }}
         <small class="err" data-err="{{ field.name }}"></small>
@@ -23,38 +34,74 @@
 
   <aside class="card result" id="result" aria-live="polite">
     <h2>Résultat</h2>
-    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
+    <div id="placeholder" class="placeholder">Le segment, les offres et l'explication du score apparaîtront ici.</div>
     <div id="output" hidden>
-      <div class="badge" id="badge"></div>
-      <div class="gauge"><div class="bar" id="bar"></div><div class="mark" id="mark"></div></div>
-      <div class="gauge-legend"><span>0 %</span><span id="thr"></span><span>100 %</span></div>
-      <p id="sentence" class="sentence"></p>
+      <div class="tier-head">
+        <span class="badge" id="badge"></span>
+        <span class="score"><b id="score"></b><small>score de potentiel sur 100</small></span>
+      </div>
+      <div class="zones" aria-hidden="true">
+        <span class="z z-std" id="z1">Standard</span><span class="z z-pot" id="z2">Potentiel</span><span class="z z-pre" id="z3">Premium</span>
+        <i class="pin" id="pin"></i>
+      </div>
+      <p class="sentence" id="sentence"></p>
+      <div class="action" id="action"></div>
+
+      <h3>Ce qui influence ce score</h3>
+      <div id="factors" class="factors"></div>
+      <p class="legend"><i class="dot-pos"></i> favorable <i class="dot-neg"></i> défavorable</p>
+
+      <h3>Offres à proposer</h3>
+      <p class="pitch" id="pitch"></p>
+      <ul class="offers" id="offers"></ul>
+
+      <div id="levers-block" hidden>
+        <h3>Ce qui ferait monter le score</h3>
+        <ul class="offers" id="levers"></ul>
+        <p class="note">Simulations indicatives, fondées sur des tendances observées.</p>
+      </div>
+
+      <p class="note">Outil d'aide à la décision commerciale : il ne décide jamais d'accorder ou de refuser un crédit, un contrat ou un prix.</p>
     </div>
   </aside>
 </div>
+{% include "predictor/_tech.html" %}
 {% endblock %}
 {% block scripts %}
 <script>
 const form = document.getElementById("income-form");
 const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+const fmt = n => String(n).replace(".", ",");
+
+const EXAMPLES = {
+  cadre:     {age: 45, hours_per_week: 50, education_num: 14, capital_gain: 0, capital_loss: 0, workclass: "Private", occupation: "Exec-managerial", marital_status: "Married-civ-spouse", relationship: "Husband"},
+  intermediaire: {age: 36, hours_per_week: 45, education_num: 10, capital_gain: 0, capital_loss: 0, workclass: "Private", occupation: "Sales", marital_status: "Married-civ-spouse", relationship: "Husband"},
+  jeune:     {age: 29, hours_per_week: 45, education_num: 13, capital_gain: 0, capital_loss: 0, workclass: "Private", occupation: "Sales", marital_status: "Never-married", relationship: "Not-in-family"},
+};
+document.querySelectorAll("[data-example]").forEach(btn => btn.addEventListener("click", () => {
+  for (const [name, value] of Object.entries(EXAMPLES[btn.dataset.example])) {
+    const input = form.elements[name]; if (input) input.value = value;
+  }
+  form.requestSubmit();
+}));
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  document.querySelectorAll(".err").forEach(el => el.textContent = "");
+  document.querySelectorAll(".err").forEach(n => n.textContent = "");
   const payload = Object.fromEntries(new FormData(form).entries());
   $("submit").disabled = true; $("submit").textContent = "Analyse…";
   try {
     const res = await fetch("{% url 'income_api' %}", {
       method: "POST",
-      headers: {"Content-Type": "application/json",
-                "X-CSRFToken": payload.csrfmiddlewaretoken},
+      headers: {"Content-Type": "application/json", "X-CSRFToken": payload.csrfmiddlewaretoken},
       body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!data.ok) {
       for (const [name, errs] of Object.entries(data.errors)) {
-        const el = document.querySelector(`[data-err="${name}"]`);
-        if (el) el.textContent = errs[0].message;
+        const target = document.querySelector(`[data-err="${name}"]`);
+        if (target) target.textContent = errs[0].message;
       }
       return;
     }
@@ -68,12 +115,47 @@ form.addEventListener("submit", async (e) => {
 
 function show(d) {
   $("placeholder").hidden = true; $("output").hidden = false;
-  $("output").className = d.high ? "high" : "low";
-  $("badge").textContent = d.high ? "Revenu > 50 000 $" : "Revenu ≤ 50 000 $";
-  $("bar").style.width = d.probability + "%";
-  $("mark").style.left = d.threshold + "%";
-  $("thr").textContent = "seuil " + d.threshold + " %";
-  $("sentence").innerHTML = `Probabilité estimée d'un revenu supérieur à 50 000 $ : <b>${d.probability} %</b>.`;
+  $("output").className = "tier-" + d.tier;
+  $("badge").textContent = "Segment " + d.tier_label;
+  $("score").textContent = d.score;
+  // jauge à trois zones : Standard | Potentiel | Premium
+  $("z1").style.flexBasis = d.threshold + "%";
+  $("z2").style.flexBasis = (d.premium_threshold - d.threshold) + "%";
+  $("z3").style.flexBasis = (100 - d.premium_threshold) + "%";
+  $("pin").style.left = d.probability + "%";
+  const trust = {"élevée": "Fiabilité de l'évaluation : élevée.", "moyenne": "Fiabilité de l'évaluation : moyenne.", "faible": "Client proche d'une limite de segment : évaluation à confirmer."}[d.confidence];
+  $("sentence").textContent = d.segment + ". " + trust;
+  $("action").textContent = d.action;
+  $("pitch").textContent = d.pitch;
+
+  // facteurs : sens (favorable / défavorable) et intensité, sans chiffres
+  const box = $("factors"); box.replaceChildren();
+  const maxAbs = Math.max(...d.factors.map(f => Math.abs(f.points)), 1);
+  d.factors.forEach(f => {
+    const row = el("div", "factor");
+    row.append(el("span", "factor-name", f.label));
+    const track = el("div", "factor-track");
+    const bar = el("i", f.direction === "down" ? "neg" : "pos");
+    bar.style.width = (Math.abs(f.points) / maxAbs * 50) + "%";
+    if (f.direction === "down") bar.style.right = "50%"; else bar.style.left = "50%";
+    track.append(bar);
+    const word = f.direction === "flat" ? "Neutre" : (f.direction === "up" ? "▲ " : "▼ ") + f.strength[0].toUpperCase() + f.strength.slice(1);
+    row.append(track, el("b", "factor-val " + (f.direction === "down" ? "neg" : f.direction === "up" ? "pos" : ""), word));
+    box.append(row);
+  });
+
+  const offers = $("offers"); offers.replaceChildren();
+  [["Banque", d.bank], ["Assurance", d.insurance]].forEach(([kind, list]) => list.forEach(([title, text]) => {
+    const li = el("li"); li.append(el("span", "kind", kind), el("b", null, " " + title + " · "), document.createTextNode(text));
+    offers.append(li);
+  }));
+
+  $("levers-block").hidden = d.levers.length === 0;
+  const lev = $("levers"); lev.replaceChildren();
+  d.levers.forEach(l => {
+    const li = el("li"); li.append(el("b", null, l.label), document.createTextNode(" → score " + d.score + " à " + l.new_score));
+    lev.append(li);
+  });
 }
 </script>
 {% endblock %}

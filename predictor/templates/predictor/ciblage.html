@@ -1,0 +1,206 @@
+{% extends "predictor/base.html" %}
+{% load static %}
+{% block title %}Portefeuille clients · Atelier ML{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'predictor/income_pro.css' %}">{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+<nav class="subtabs" aria-label="Prédire un revenu">
+  <a href="{% url 'income' %}">Un client</a>
+  <a href="{% url 'ciblage' %}" class="active" aria-current="page">Portefeuille clients</a>
+</nav>
+<h1 class="page-title">Ciblage <em>premium</em> de portefeuille</h1>
+<p class="lead small">Importez votre fichier clients : chaque client est classé <strong>Premium</strong>, <strong>Potentiel</strong> ou <strong>Standard</strong>, et vous savez qui contacter en priorité pour dépenser votre budget commercial là où il rapporte.</p>
+
+<div class="grid">
+  <section class="card">
+    <h2>1 · Importer vos clients</h2>
+    <form id="upload-form" novalidate>
+      {% csrf_token %}
+      <input type="file" id="file" accept=".csv,text/csv" hidden>
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choisir un fichier CSV">
+        <b id="drop-title">Choisir un fichier CSV</b>
+        <span id="drop-sub">ou le déposer ici · {{ max_rows }} lignes maximum · 5&nbsp;Mo</span>
+      </div>
+      <div class="row-actions">
+        <button class="btn" id="analyze" type="submit" disabled>Analyser le portefeuille →</button>
+        <a class="link" href="{% url 'ciblage_modele' %}">Télécharger un fichier modèle</a>
+      </div>
+      <details class="cols">
+        <summary>Colonnes attendues ({{ features|length }})</summary>
+        <p>{% for f in features %}<code>{{ f }}</code> {% endfor %}</p>
+        <p class="note">Une colonne facultative <code>client_id</code> permet de retrouver vos clients. Aucune donnée n'est enregistrée sur le serveur.</p>
+      </details>
+    </form>
+    <p class="err-box" id="upload-error" hidden></p>
+  </section>
+
+  <aside class="card result" id="batch-result">
+    <h2>2 · Résultats</h2>
+    <div id="batch-placeholder" class="placeholder">Les segments et le classement des clients apparaîtront ici.</div>
+    <div id="batch-output" hidden>
+      <p class="meaning" id="batch-summary"></p>
+      <div class="tier-cards" id="tier-cards"></div>
+      <h3>15 clients à contacter en premier</h3>
+      <table class="tbl"><thead><tr><th>Client</th><th>Score /100</th><th>Segment</th></tr></thead><tbody id="top-body"></tbody></table>
+      <ul class="notes" id="notes"></ul>
+      <button class="btn" id="download" type="button">Télécharger le classement complet (CSV)</button>
+    </div>
+  </aside>
+</div>
+
+<section class="card roi" id="roi">
+  <h2>3 · Simulateur de rentabilité d'une campagne</h2>
+  <p class="meaning">Comparez un envoi à tous vos clients et une campagne ciblée sur ceux que le modèle classe en tête. Les montants sont à saisir dans votre devise ; les valeurs par défaut sont des hypothèses à adapter.</p>
+  <div class="roi-grid">
+    <div class="roi-inputs">
+      <label class="field"><span>Nombre de clients du portefeuille</span><input class="input" id="in-n" type="number" min="1" value="10000"></label>
+      <label class="field"><span>Coût d'un contact (e-mail, appel…)</span><input class="input" id="in-cost" type="number" min="0" step="0.1" value="2"></label>
+      <label class="field"><span>Valeur d'un client converti</span><input class="input" id="in-value" type="number" min="0" value="120"></label>
+      <label class="field"><span>Part des clients à revenu élevé qui acceptent l'offre (%)</span><input class="input" id="in-conv" type="number" min="0" max="100" value="10"></label>
+      <label class="field"><span>Part des clients contactés : <b id="k-label">20 %</b></span><input id="in-k" type="range" min="1" max="100" value="20"></label>
+      <div class="examples"><button type="button" class="chip" id="pick-premium">Premium seulement</button><button type="button" class="chip" id="pick-potential">Premium + Potentiel</button><button type="button" class="chip" id="pick-best">Part la plus rentable</button></div>
+    </div>
+    <div class="roi-out">
+      <div class="compare">
+        <div class="col"><h3>Envoi à tous</h3><div class="big" id="mass-profit"></div><small id="mass-detail"></small></div>
+        <div class="col good"><h3>Ciblage du modèle</h3><div class="big" id="tgt-profit"></div><small id="tgt-detail"></small></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+      <details class="curve-box"><summary>Voir la courbe de gain</summary>
+        <svg id="chart" viewBox="0 0 360 220" role="img" aria-label="Courbe de gain : part des clients à revenu élevé touchés selon la part de clients contactés"></svg>
+      </details>
+      <p class="note">Hypothèse prudente : seuls les clients à revenu élevé génèrent de la valeur. Les montants ci-dessus sont des exemples à adapter à votre activité.</p>
+    </div>
+  </div>
+</section>
+{% include "predictor/_tech.html" %}
+{% endblock %}
+{% block scripts %}
+<script>
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+const fmt = n => String(n).replace(".", ",");
+const nf = new Intl.NumberFormat("fr-FR", {maximumFractionDigits: 0});
+const GAIN = {{ gain_json|safe }};
+const TIERS = {{ tiers_json|safe }};
+const CSRF = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+/* ---------- import du fichier ---------- */
+const fileInput = $("file");
+function setFile(file) {
+  if (!file) return;
+  if (fileInput.files[0] !== file) { const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files; }
+  $("drop-title").textContent = file.name;
+  $("drop-sub").textContent = Math.round(file.size / 1024) + " Ko";
+  $("analyze").disabled = false;
+}
+fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+["dragover", "dragenter"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
+$("drop").addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
+$("drop").addEventListener("click", () => fileInput.click());
+$("drop").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+
+async function send(format) {
+  const body = new FormData(); body.append("file", fileInput.files[0]);
+  return fetch("{% url 'ciblage_api' %}" + (format ? "?format=" + format : ""), {method: "POST", headers: {"X-CSRFToken": CSRF}, body});
+}
+
+$("upload-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("upload-error").hidden = true;
+  $("analyze").disabled = true; $("analyze").textContent = "Analyse…";
+  try {
+    const res = await send();
+    const data = await res.json();
+    if (!data.ok) { $("upload-error").textContent = data.error; $("upload-error").hidden = false; return; }
+    showBatch(data);
+  } catch (err) {
+    $("upload-error").textContent = "Erreur de connexion au serveur."; $("upload-error").hidden = false;
+  } finally { $("analyze").disabled = false; $("analyze").textContent = "Analyser le portefeuille →"; }
+});
+
+$("download").addEventListener("click", async () => {
+  const res = await send("csv");
+  if (!res.ok) return;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a"); a.href = url; a.download = "classement_clients.csv"; a.click();
+  URL.revokeObjectURL(url);
+});
+
+function showBatch(d) {
+  $("batch-placeholder").hidden = true; $("batch-output").hidden = false;
+  $("batch-summary").textContent = nf.format(d.n_scored) + " clients analysés sur " + nf.format(d.n_total) +
+    ". Environ " + nf.format(d.expected_high) + " clients à revenu élevé probable.";
+  const cards = $("tier-cards"); cards.replaceChildren();
+  d.tiers.forEach(t => {
+    const c = el("div", "tier-card tier-" + t.key);
+    c.append(el("b", null, nf.format(t.count)), el("span", null, t.label), el("small", null, fmt(t.share) + " % du portefeuille"));
+    cards.append(c);
+  });
+  const body = $("top-body"); body.replaceChildren();
+  d.top.forEach(r => {
+    const tr = el("tr"); tr.append(el("td", null, r.id), el("td", null, String(Math.min(99, Math.round(r.probability)))));
+    const td = el("td"); td.append(el("span", "pill tier-" + r.tier, r.tier_label)); tr.append(td); body.append(tr);
+  });
+  const notes = $("notes"); notes.replaceChildren();
+  d.notes.forEach(n => notes.append(el("li", null, n)));
+  $("in-n").value = d.n_scored; compute();
+}
+
+/* ---------- simulateur de rentabilité ---------- */
+const at = (k, field) => {  // interpolation linéaire sur la table (k de 0 à 100)
+  k = Math.max(0, Math.min(100, k)); const lo = Math.floor(k), hi = Math.ceil(k);
+  const a = GAIN[lo][field] ?? GAIN[1][field], b = GAIN[hi][field] ?? GAIN[1][field];
+  return a + (b - a) * (k - lo);
+};
+const BASE = GAIN[100].precision;  // part de clients à revenu élevé dans l'ensemble (lue depuis la table, sans nombre décimal injecté)
+function scenario(k) {
+  const N = +$("in-n").value || 0, cost = +$("in-cost").value || 0, value = +$("in-value").value || 0, conv = (+$("in-conv").value || 0) / 100;
+  const mass = N * BASE * conv * value - N * cost;
+  const n = N * k / 100, precision = k > 0 ? at(k, "precision") : 0;
+  const tgt = n * precision * conv * value - n * cost;
+  return {N, cost, mass, tgt, n, precision, convMass: N * BASE * conv, convTgt: n * precision * conv};
+}
+const money = v => (v < 0 ? "−" : "") + nf.format(Math.abs(v));
+function compute() {
+  const k = +$("in-k").value; $("k-label").textContent = k + " %";
+  const s = scenario(k);
+  $("mass-profit").textContent = money(s.mass);
+  $("mass-detail").textContent = nf.format(s.N) + " contacts · " + nf.format(s.convMass) + " clients convertis";
+  $("tgt-profit").textContent = money(s.tgt);
+  $("tgt-detail").textContent = nf.format(s.n) + " contacts · " + nf.format(s.convTgt) + " clients convertis";
+  const diff = s.tgt - s.mass;
+  $("verdict").textContent = diff >= 0
+    ? "Le ciblage rapporte " + money(diff) + " de plus et économise " + money(s.N * s.cost - s.n * s.cost) + " de frais de contact."
+    : "Avec ces hypothèses, l'envoi à tous reste plus rentable de " + money(-diff) + ". Réduisez le coût de contact ou ajustez la part ciblée.";
+  drawChart(k);
+}
+function best() { let b = 1, bv = -Infinity; for (let k = 1; k <= 100; k++) { const v = scenario(k).tgt; if (v > bv) { bv = v; b = k; } } return b; }
+function drawChart(k) {
+  const W = 360, H = 220, L = 38, R = 10, T = 10, B = 30, w = W - L - R, h = H - T - B;
+  const x = v => L + v / 100 * w, y = v => T + (1 - v) * h;
+  const pts = GAIN.map(g => x(g.k) + "," + y(g.recall)).join(" ");
+  const ns = "http://www.w3.org/2000/svg", svg = $("chart"); svg.replaceChildren();
+  const add = (tag, attrs, text) => { const n = document.createElementNS(ns, tag); for (const [a, v] of Object.entries(attrs)) n.setAttribute(a, v); if (text) n.textContent = text; svg.append(n); return n; };
+  [0, 25, 50, 75, 100].forEach(v => {
+    add("line", {x1: L, x2: W - R, y1: y(v / 100), y2: y(v / 100), class: "grid-line"});
+    add("text", {x: L - 6, y: y(v / 100) + 4, class: "ax", "text-anchor": "end"}, v + "");
+    add("text", {x: x(v), y: H - 12, class: "ax", "text-anchor": "middle"}, v + "");
+  });
+  add("text", {x: L + w / 2, y: H - 0, class: "ax", "text-anchor": "middle"}, "% de clients contactés");
+  add("text", {x: 10, y: T + h / 2, class: "ax", "text-anchor": "middle", transform: `rotate(-90 10 ${T + h / 2})`}, "% hauts revenus touchés");
+  add("line", {x1: x(0), y1: y(0), x2: x(100), y2: y(1), class: "random"});
+  add("polyline", {points: pts, class: "curve"});
+  const r = at(k, "recall");
+  add("line", {x1: x(k), x2: x(k), y1: y(0), y2: y(r), class: "marker-line"});
+  add("circle", {cx: x(k), cy: y(r), r: 5, class: "marker"});
+  add("text", {x: x(k) + 8, y: y(r) + 16, class: "ax strong"}, nf.format(r * 100) + " %");
+}
+["in-n", "in-cost", "in-value", "in-conv", "in-k"].forEach(id => $(id).addEventListener("input", compute));
+$("pick-premium").addEventListener("click", () => { $("in-k").value = Math.round(TIERS.premium.share * 100); compute(); });
+$("pick-potential").addEventListener("click", () => { $("in-k").value = Math.round((TIERS.premium.share + TIERS.potentiel.share) * 100); compute(); });
+$("pick-best").addEventListener("click", () => { $("in-k").value = best(); compute(); });
+compute();
+</script>
+{% endblock %}

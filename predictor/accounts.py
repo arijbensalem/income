@@ -1,5 +1,9 @@
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_not_required
+try:
+    from django.contrib.auth.decorators import login_not_required
+except ImportError:              # Django < 5.1
+    def login_not_required(view):
+        return view
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import redirect, render
 
@@ -15,6 +19,33 @@ class StyledAuthenticationForm(AuthenticationForm):
         super().__init__(*args, **kwargs)
         self.fields["username"].label = "Nom d'utilisateur"
         self.fields["password"].label = "Mot de passe"
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+
+class RelationshipAuthForm(AuthenticationForm):
+    """Formulaire de login dédié à Relation Familiale"""
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Identifiants incorrect.",
+        "inactive": "Compte désactivé.",
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Nom d'utilisateur"
+        self.fields["password"].label = "Mot de passe"
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "input"
+
+
+class RelationshipRegisterForm(UserCreationForm):
+    """Formulaire d'inscription dédié à Relation Familiale"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Nom d'utilisateur"
+        self.fields["password1"].label = "Mot de passe"
+        self.fields["password2"].label = "Confirmer le mot de passe"
         for f in self.fields.values():
             f.widget.attrs["class"] = "input"
 

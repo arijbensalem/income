@@ -1,62 +1,300 @@
 {% extends "predictor/base.html" %}
-{% block title %}Prédiction de la relation · Atelier ML{% endblock %}
+{% block title %}Segmentation Clients · Atelier ML{% endblock %}
 {% block content %}
 <a class="back" href="{% url 'home' %}">← Accueil</a>
-<h1 class="page-title">Prédiction de la <em>relation</em></h1>
-<p class="lead small">Le modèle prédit la relation familiale (ou l'absence de lien) entre une personne et le chef de famille, à partir de ses caractéristiques démographiques et professionnelles.</p>
+<h1 class="page-title">Vente <em>Relation Familiale</em></h1>
+<p class="lead small">Analysez le profil client et proposez les bons produits bancaires selon sa relation familiale.</p>
 
-<div class="grid">
-  <form id="relationship-form" class="card" novalidate>
-    {% csrf_token %}
-    <h2>Profil</h2>
-    <div class="fields">
-      {% for field in form %}
-      <label class="field">
-        <span>{{ field.label }}</span>
-        {{ field }}
-        <small class="err" data-err="{{ field.name }}"></small>
-      </label>
-      {% endfor %}
-    </div>
-    <button id="submit" class="btn" type="submit">Lancer l'analyse →</button>
-  </form>
-
-  <aside class="card result" id="result" aria-live="polite">
-    <h2>Résultat</h2>
-    <div id="placeholder" class="placeholder">Le résultat apparaîtra ici après l'envoi du formulaire.</div>
-    <div id="output" class="family" hidden>
-      <div class="badge" id="badge"></div>
-      <p id="meaning" class="meaning"></p>
-      <div class="probs" id="probs"></div>
-      <p id="sentence" class="sentence"></p>
-    </div>
-  </aside>
+<!-- Navigation onglets -->
+<div class="tabs-nav">
+  <button class="tab-link active" data-tab="prediction">Profil Client</button>
+  <button class="tab-link" data-tab="analytics">Segments Bancaires</button>
+  <button class="tab-link" data-tab="batch">Prospection Clients</button>
+  <button class="tab-link" data-tab="history">Suivi Ventes</button>
 </div>
+
+<!-- TAB 1: PRÉDICTION → RECOMMANDATION PRODUIT -->
+<div id="prediction" class="tab-content active">
+  <div class="grid">
+    <form id="relationship-form" class="card" novalidate>
+      {% csrf_token %}
+      <h2>Profil Client</h2>
+      <div class="fields">
+        {% for field in form %}
+        <label class="field">
+          <span>{{ field.label }}</span>
+          {{ field }}
+          <small class="err" data-err="{{ field.name }}"></small>
+        </label>
+        {% endfor %}
+      </div>
+      <button id="submit" class="btn" type="submit">Analyser le profil</button>
+    </form>
+
+    <aside class="card result" id="result" aria-live="polite">
+      <h2>Recommandation</h2>
+      <div id="placeholder" class="placeholder">Le résultat apparaîtra ici.</div>
+      <div id="output" class="family" hidden>
+        <!-- Profil détecté -->
+        <div style="padding: 16px; background: var(--bg); border-radius: 10px; margin-bottom: 16px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Profil détecté</h3>
+          <div class="badge" id="badge" style="margin-bottom: 12px;"></div>
+          <p id="meaning" class="meaning" style="margin: 0; font-size: 13px; color: var(--muted);"></p>
+        </div>
+
+        <!-- Probabilités -->
+        <div style="padding: 16px; background: var(--bg); border-radius: 10px; margin-bottom: 16px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600;">Probabilités</h3>
+          <div class="probs" id="probs"></div>
+        </div>
+
+        <!-- Recommandations produits -->
+        <div style="padding: 16px; background: var(--bg); border-radius: 10px; margin-bottom: 16px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600;">Produits recommandés</h3>
+          <div id="products-list" style="display: grid; gap: 10px;"></div>
+        </div>
+
+        <!-- Score client -->
+        <div style="padding: 16px; background: var(--bg); border-radius: 10px;">
+          <p id="client-score" style="margin: 0; font-size: 13px; color: var(--muted);"></p>
+          <p id="commission-info" style="margin: 8px 0 0 0; font-size: 13px; color: var(--accent); font-weight: 600;"></p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- TAB 2: DASHBOARD → SEGMENTATION & CIBLES DE VENTE -->
+<div id="analytics" class="tab-content">
+  <div class="card">
+    <h2>Segmentation & Cibles de Vente</h2>
+    <div id="analytics-loading" class="placeholder">Chargement...</div>
+    <div id="analytics-content" hidden>
+      <!-- KPIs commerciaux -->
+      <div class="stats compact">
+        <div>
+          <b id="total-predictions">0</b>
+          <span>Clients ciblés</span>
+        </div>
+        <div>
+          <b id="avg-probability">0%</b>
+          <span>Confiance</span>
+        </div>
+        <div>
+          <b id="total-budget">0€</b>
+          <span>Revenue potentiel</span>
+        </div>
+      </div>
+
+      <!-- Tableau segmentation produits -->
+      <div style="margin: 24px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px;">Stratégie par type de client</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line);">
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Type Client</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Nombre</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">%</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Revenu moy</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Revenue potentiel</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Produit à vendre</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Budget</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Priorité</th>
+              </tr>
+            </thead>
+            <tbody id="profiling-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Distribution chart -->
+      <div style="margin: 24px 0; padding: 16px; background: var(--bg); border-radius: 10px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px;">Distribution des segments</h3>
+        <canvas id="distribution-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: BATCH → PROSPECTION CLIENTS -->
+<div id="batch" class="tab-content">
+  <div class="card">
+    <h2>Prospection Clients - Segmentation & Ciblage</h2>
+
+    <div style="margin: 24px 0;">
+      <h3 style="margin: 0 0 16px 0; font-size: 16px;">Importer liste clients</h3>
+      <p style="margin: 0 0 16px 0; color: var(--muted); font-size: 14px;">Upload un CSV pour segmenter et cibler les clients avec les bons produits.</p>
+      
+      <div id="upload-area" style="border: 2px dashed var(--line); border-radius: 10px; padding: 32px 16px; text-align: center; cursor: pointer; background: var(--bg); transition: all 0.2s;">
+        <input type="file" id="batch-file" accept=".csv" hidden>
+        <p style="margin: 0 0 8px 0; font-weight: 500;">Cliquez ou glissez-déposez</p>
+        <small style="color: var(--muted);">Fichier CSV avec les colonnes du formulaire (séparateur « , » ou « ; », 2 000 lignes max.)</small>
+      </div>
+      <p style="margin: 10px 0 0 0; font-size: 13px;"><a href="#" id="batch-template" style="color: var(--accent);">Télécharger un modèle de fichier CSV</a></p>
+      <div id="batch-error" class="err-box" hidden style="margin-top: 12px;"></div>
+
+      <div id="batch-progress" hidden style="margin-top: 16px;">
+        <div style="width: 100%; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden;">
+          <div id="progress-fill" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <p id="batch-status" style="margin: 12px 0 0 0; color: var(--muted); font-size: 13px;">Traitement...</p>
+      </div>
+
+      <div id="batch-results" hidden style="margin-top: 24px;">
+        <!-- Résumé prospection -->
+        <div style="margin-bottom: 24px;">
+          <h3 style="margin: 0 0 16px 0; font-size: 16px;">Rapport de prospection</h3>
+          <div id="campaigns-list" style="display: grid; gap: 12px;"></div>
+        </div>
+
+        <!-- Stats prospection -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div style="background: var(--bg); padding: 16px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--ink);" id="batch-total">0</div>
+            <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">Clients importés</div>
+          </div>
+          <div style="background: var(--bg); padding: 16px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="batch-success">0</div>
+            <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">Analysés</div>
+          </div>
+          <div style="background: var(--bg); padding: 16px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="batch-revenue">0€</div>
+            <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">Revenue potentiel</div>
+          </div>
+          <div style="background: var(--bg); padding: 16px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="batch-quality">0%</div>
+            <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">Fiabilité</div>
+          </div>
+        </div>
+
+        <button id="batch-reset" class="btn" style="margin-top: 16px;">Nouvelle prospection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: HISTORIQUE → SUIVI VENTES -->
+<div id="history" class="tab-content">
+  <div class="card">
+    <h2>Suivi Ventes - Historique</h2>
+    
+    <div style="display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; align-items: center;">
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        Type client:
+        <select id="history-filter" class="input" style="flex: 0 1 200px; margin: 0;">
+          <option value="all">Tous</option>
+          <option value="Husband">Mari</option>
+          <option value="Wife">Épouse</option>
+          <option value="Own-child">Enfant</option>
+          <option value="Unmarried">Célibataire</option>
+          <option value="Not-in-family">Pas de lien</option>
+          <option value="Other-relative">Autre parent</option>
+        </select>
+      </label>
+      <button id="history-refresh" class="btn" style="margin: 0; padding: 8px 16px; font-size: 13px;">Actualiser</button>
+      <button id="history-export" class="btn" style="margin: 0; padding: 8px 16px; font-size: 13px;">Exporter CSV</button>
+      <button id="history-export-pdf" class="btn" style="margin: 0; padding: 8px 16px; font-size: 13px;">Exporter PDF</button>
+    </div>
+
+    <div id="history-loading" class="placeholder">Chargement...</div>
+    <div id="history-content" hidden>
+      <!-- KPIs Ventes -->
+      <div class="stats compact">
+        <div>
+          <b id="history-total">0</b>
+          <span>Clients prospecté</span>
+        </div>
+        <div>
+          <b id="history-conversion">0%</b>
+          <span>Taux conversion</span>
+        </div>
+        <div>
+          <b id="history-revenue">0€</b>
+          <span>Revenue généré</span>
+        </div>
+        <div>
+          <b id="history-roi">0%</b>
+          <span>ROI ventes</span>
+        </div>
+      </div>
+
+      <!-- Tableau ventes -->
+      <div style="margin: 24px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px;">Historique des ventes</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line);">
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Date</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Type client</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Confiance</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Produit</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;">Commission €</th>
+              </tr>
+            </thead>
+            <tbody id="history-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Analyse par type client -->
+      <div style="margin: 24px 0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px;">Performance par type de client</h3>
+        <div id="segment-analysis" style="display: grid; gap: 12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const form = document.getElementById("relationship-form");
 const $ = id => document.getElementById(id);
 
 const MEANINGS = {
-  "Husband": "Mari : personne mariée vivant avec son conjoint.",
-  "Wife": "Épouse : personne mariée vivant avec son conjoint.",
-  "Own-child": "Enfant propre : personne dans la maison qui est un enfant du chef de famille.",
-  "Unmarried": "Non marié(e) : personne adulte célibataire.",
-  "Not-in-family": "Pas de lien de famille : personne sans lien familial avec le chef de famille.",
-  "Other-relative": "Autre parent : personne ayant un lien familial autre que mari/femme/enfant.",
+  "Husband": "Mari - Personne mariée vivant avec conjoint.",
+  "Wife": "Épouse - Personne mariée vivant avec conjoint.",
+  "Own-child": "Enfant - Jeune vivant chez le chef de famille.",
+  "Unmarried": "Célibataire - Personne adulte non mariée.",
+  "Not-in-family": "Pas de lien - Sans lien familial.",
+  "Other-relative": "Autre parent - Lien familial spécifique.",
 };
+
+// Gestion des onglets
+document.querySelectorAll(".tab-link").forEach(btn => {
+  btn.addEventListener("click", function() {
+    const tabName = this.dataset.tab;
+    
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-link").forEach(b => b.classList.remove("active"));
+    
+    $(tabName).classList.add("active");
+    this.classList.add("active");
+    
+    if (tabName === "analytics") loadAnalytics();
+    if (tabName === "history") loadHistory();
+  });
+});
+
+// ============================================
+// TAB 1: PRÉDICTION
+// ============================================
+const form = document.getElementById("relationship-form");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   document.querySelectorAll(".err").forEach(el => el.textContent = "");
   const payload = Object.fromEntries(new FormData(form).entries());
-  $("submit").disabled = true; $("submit").textContent = "Analyse…";
+  $("submit").disabled = true;
+  $("submit").textContent = "Analyse...";
+  
   try {
     const res = await fetch("{% url 'relationship_api' %}", {
       method: "POST",
-      headers: {"Content-Type": "application/json",
-                "X-CSRFToken": payload.csrfmiddlewaretoken},
+      headers: {"Content-Type": "application/json", "X-CSRFToken": payload.csrfmiddlewaretoken},
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -67,27 +305,482 @@ form.addEventListener("submit", async (e) => {
       }
       return;
     }
-    show(data);
+    showPrediction(data);
   } catch (err) {
-    alert("Erreur de connexion au serveur.");
+    alert("Erreur: " + err);
   } finally {
-    $("submit").disabled = false; $("submit").textContent = "Lancer l'analyse →";
+    $("submit").disabled = false;
+    $("submit").textContent = "Analyser le profil";
   }
 });
 
-function show(d) {
+function showPrediction(d) {
   $("placeholder").hidden = true;
   $("output").hidden = false;
   $("badge").textContent = d.label_fr;
   $("meaning").textContent = MEANINGS[d.label] || "";
+  
   $("probs").innerHTML = d.classes.map((item) => `
     <div class="prob-row">
       <span>${item.label_fr}</span>
       <div class="gauge"><div class="bar" style="width:${item.probability}%"></div></div>
-      <b>${item.probability} %</b>
+      <b>${item.probability}%</b>
     </div>
   `).join("");
-  $("sentence").innerHTML = `Relation la plus probable pour ce profil : <b>${d.label_fr}</b> (${d.probability} %).`;
+  
+  // Afficher les produits
+  if (d.recommendations && d.recommendations.products) {
+    $("products-list").innerHTML = d.recommendations.products.map(prod => `
+      <div style="background: white; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: 13px;">
+        <div style="font-weight: 600; margin-bottom: 4px;">${prod.number}. ${prod.name}</div>
+        <div style="color: var(--muted); margin-bottom: 4px;">${prod.description}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: var(--accent); font-weight: 600;">${prod.price}</span>
+          <span style="font-size: 12px; color: var(--muted);">Appeal: ${prod.appeal}</span>
+        </div>
+      </div>
+    `).join("");
+  }
+  
+  // Score client
+  if (d.client_score) {
+    $("client-score").innerHTML = `<strong>Score potentiel:</strong> ${d.client_score}/10 - ${d.client_score_label}`;
+  }
+  
+  // Commission estimée
+  const commissionRates = {
+    "Husband": 0.03, "Wife": 0.02, "Own-child": 0.015, "Unmarried": 0.02, "Not-in-family": 0.025, "Other-relative": 0.015
+  };
+  const revenueEstimate = 3500;
+  const commission = Math.round(revenueEstimate * (commissionRates[d.label] || 0.02));
+  $("commission-info").innerHTML = `Commission estimée: <strong>${commission}€</strong>`;
 }
+
+// ============================================
+// TAB 2: DASHBOARD PROFILING
+// ============================================
+let analyticsChart = null;
+
+async function loadAnalytics() {
+  const response = await fetch("{% url 'relationship_analytics_api' %}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+  });
+  const data = await response.json();
+  
+  if (!data.ok) return;
+  
+  $("total-predictions").textContent = data.total_predictions;
+  $("avg-probability").textContent = data.avg_probability + "%";
+  $("total-budget").textContent = data.total_budget.toLocaleString('fr-FR') + "€";
+  
+  // Tableau de segmentation
+  $("profiling-table").innerHTML = data.profiling.map(item => `
+    <tr style="border-bottom: 1px solid var(--line);">
+      <td style="padding: 12px; font-weight: 600;">${item.relationship_fr}</td>
+      <td style="padding: 12px; text-align: center;">${item.count}</td>
+      <td style="padding: 12px; text-align: center;">${item.percentage}%</td>
+      <td style="padding: 12px; text-align: center;">${item.avg_income.toLocaleString('fr-FR')}€</td>
+      <td style="padding: 12px; text-align: center;">${item.high_income_pct}%</td>
+      <td style="padding: 12px; font-size: 12px; color: var(--accent);">${item.action}</td>
+      <td style="padding: 12px; text-align: center; font-weight: 600;">${item.budget.toLocaleString('fr-FR')}€</td>
+      <td style="padding: 12px; text-align: center; font-size: 12px;">${item.priority}</td>
+    </tr>
+  `).join("");
+  
+  // Chart
+  const labels = data.profiling.map(d => d.relationship_fr);
+  const counts = data.profiling.map(d => d.count);
+  
+  if (analyticsChart) analyticsChart.destroy();
+  
+  const ctx = $("distribution-chart").getContext("2d");
+  analyticsChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: counts,
+        backgroundColor: ["#0f6b5c", "#c8553d", "#f5a623", "#4a90e2", "#7ed321", "#bd10e0"]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+  
+  $("analytics-loading").hidden = true;
+  $("analytics-content").hidden = false;
+}
+
+// ============================================
+// TAB 3: BATCH CAMPAGNE
+// ============================================
+const uploadArea = $("upload-area");
+const batchFile = $("batch-file");
+
+uploadArea.addEventListener("click", () => batchFile.click());
+uploadArea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  uploadArea.style.borderColor = "var(--accent)";
+});
+uploadArea.addEventListener("dragleave", () => {
+  uploadArea.style.borderColor = "var(--line)";
+});
+uploadArea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadArea.style.borderColor = "var(--line)";
+  batchFile.files = e.dataTransfer.files;
+  handleBatchFile();
+});
+
+batchFile.addEventListener("change", handleBatchFile);
+
+async function handleBatchFile() {
+  const file = batchFile.files[0];
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append("file", file);
+
+  $("batch-error").hidden = true;
+  uploadArea.hidden = true;
+  $("batch-progress").hidden = false;
+  
+  try {
+    const response = await fetch("{% url 'relationship_batch_api' %}", {
+      method: "POST",
+      headers: {"X-CSRFToken": "{{ csrf_token }}"},
+      body: formData
+    });
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { throw new Error(response.status === 403 ? "session expirée, reconnectez-vous" : "réponse inattendue du serveur (" + response.status + ")"); }
+
+    $("batch-progress").hidden = true;
+    if (!data.ok) throw new Error(data.error || "fichier non traité");
+    
+      if (data.ok) {
+        if ($("batch-total")) $("batch-total").textContent = data.total_rows;
+        if ($("batch-success")) $("batch-success").textContent = data.success;
+        if ($("batch-revenue")) $("batch-revenue").textContent = (data.campaigns ? data.campaigns.reduce((sum, c) => sum + c.budget, 0).toLocaleString('fr-FR') : 0) + "€";
+        if ($("batch-quality")) $("batch-quality").textContent = data.quality_score + "%";
+        
+        if ($("campaigns-list")) {
+          $("campaigns-list").innerHTML = (data.campaigns || []).map(camp => {
+            const commissionRate = 0.02;
+            const commission = Math.round(camp.budget * commissionRate);
+            return `
+              <div style="background: white; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600;">${camp.relationship}</div>
+                    <div style="color: var(--muted); font-size: 12px;">${camp.action}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="font-weight: 600; color: var(--accent);">${camp.budget.toLocaleString('fr-FR')}€</div>
+                    <div style="font-size: 12px; color: var(--muted);">Commission: ${commission}€</div>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: var(--muted); font-size: 12px;">
+                  <span>${camp.count} clients (${camp.percentage}%)</span>
+                  <span>Conversion est. 12%</span>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+        
+        if ($("batch-results")) $("batch-results").hidden = false;
+        if (data.errors || data.truncated) {
+          const notes = [];
+          if (data.errors) notes.push(data.errors + " ligne(s) ignorée(s) : valeurs manquantes ou invalides.");
+          if (data.truncated) notes.push("Seules les " + data.max_rows + " premières lignes ont été analysées.");
+          $("batch-error").textContent = notes.join(" ");
+          $("batch-error").hidden = false;
+        }
+      }
+  } catch (err) {
+    $("batch-error").textContent = "Import impossible : " + (err.message || err);
+    $("batch-error").hidden = false;
+    uploadArea.hidden = false;
+    $("batch-progress").hidden = true;
+    batchFile.value = "";
+  }
+}
+
+$("batch-template").addEventListener("click", (e) => {
+  e.preventDefault();
+  const csv = [
+    "age,workclass,fnlwgt,education,education-num,marital-status,occupation,race,sex,capital-gain,capital-loss,hours-per-week,native-country,income",
+    "39,State-gov,77516,Bachelors,13,Never-married,Adm-clerical,White,Male,2174,0,40,United-States,<=50K",
+    "50,Self-emp-not-inc,83311,Bachelors,13,Married-civ-spouse,Exec-managerial,White,Male,0,0,13,United-States,<=50K",
+    "23,Private,122272,HS-grad,9,Never-married,Sales,White,Female,0,0,30,United-States,<=50K",
+    "45,Private,191914,Masters,14,Married-civ-spouse,Prof-specialty,White,Female,0,0,40,United-States,>50K",
+  ].join("\n") + "\n";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "modele_clients.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$("batch-reset").addEventListener("click", () => {
+  $("batch-error").hidden = true;
+  batchFile.value = "";
+  uploadArea.hidden = false;
+  $("batch-progress").hidden = true;
+  $("batch-results").hidden = true;
+});
+
+// ============================================
+// TAB 4: HISTORIQUE & AUDIT CAMPAGNE
+// ============================================
+async function loadHistory() {
+  const filter = $("history-filter").value;
+  const response = await fetch("{% url 'relationship_history_api' %}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+    body: JSON.stringify({ filter: filter })
+  });
+  const data = await response.json();
+  
+  if (!data.ok) return;
+  
+  // Tableau ventes avec commission
+  const productActions = {
+    "Husband": "Crédit Immobilier",
+    "Wife": "Assurance Famille",
+    "Own-child": "Formation/Épargne",
+    "Unmarried": "Assurance Solo",
+    "Not-in-family": "Produits Spéc.",
+    "Other-relative": "Support Familial"
+  };
+  
+  const commissionRates = {
+    "Husband": 0.03, // 3%
+    "Wife": 0.02,    // 2%
+    "Own-child": 0.015, // 1.5%
+    "Unmarried": 0.02,  // 2%
+    "Not-in-family": 0.025, // 2.5%
+    "Other-relative": 0.015  // 1.5%
+  };
+  
+  // Calculer revenu moyen DYNAMIQUEMENT depuis les données
+  let totalIncome = 0;
+  let clientsWithIncome = 0;
+  data.history.forEach(h => {
+    if (h.income && h.income > 0) {
+      totalIncome += h.income;
+      clientsWithIncome++;
+    }
+  });
+  const revenueEstimate = clientsWithIncome > 0 ? Math.round(totalIncome / clientsWithIncome) : 3500;
+  
+  $("history-list").innerHTML = data.history.map(h => {
+    const commission = Math.round(revenueEstimate * (commissionRates[h.relationship] || 0.02));
+    return `
+      <tr style="border-bottom: 1px solid var(--line);">
+        <td style="padding: 12px;">${h.date}</td>
+        <td style="padding: 12px;">${h.relationship}</td>
+        <td style="padding: 12px; text-align: center;">${h.probability}%</td>
+        <td style="padding: 12px; font-size: 12px; color: var(--accent);">${productActions[h.relationship] || "-"}</td>
+        <td style="padding: 12px; text-align: center; font-weight: 600; color: var(--accent);">${commission}€</td>
+      </tr>
+    `;
+  }).join("");
+  
+      // Calculer KPIs commerciaux - TOUS DYNAMIQUES
+      const total = data.history.length;
+      const avgConfidence = data.history.length > 0 ? (data.history.reduce((sum, h) => sum + h.probability, 0) / data.history.length) : 0;
+      
+      // Taux de conversion DYNAMIQUE = moyenne des confiances / 100
+      const conversionRate = total > 0 ? (avgConfidence / 100) : 0;
+      const conversion = Math.round(total * conversionRate);
+      const conversionPercent = Math.round(conversionRate * 100);
+      
+      // Revenue DYNAMIQUE basé sur revenu moyen réel
+      const revenue = Math.round(conversion * revenueEstimate);
+      
+      // Investement DYNAMIQUE = 10% du revenue potentiel
+      const investement = Math.round(revenue * 0.1);
+      const roi = conversion > 0 && investement > 0 ? Math.round(((revenue - investement) / investement) * 100) : 0;
+      
+      if ($("history-total")) $("history-total").textContent = total;
+      if ($("history-conversion")) $("history-conversion").textContent = conversionPercent + "%";
+      if ($("history-revenue")) $("history-revenue").textContent = revenue.toLocaleString('fr-FR') + "€";
+      if ($("history-roi")) $("history-roi").textContent = roi + "%";
+  
+  // Analyse par segment
+  const segments = {};
+  data.history.forEach(h => {
+    if (!segments[h.relationship]) {
+      segments[h.relationship] = { count: 0, totalProba: 0 };
+    }
+    segments[h.relationship].count++;
+    segments[h.relationship].totalProba += h.probability;
+  });
+  
+  const segmentActions = {
+    "Husband": "Crédit Immobilier",
+    "Wife": "Assurance Famille",
+    "Own-child": "Formation/Épargne",
+    "Unmarried": "Assurance Solo",
+    "Not-in-family": "Produits Spéc.",
+    "Other-relative": "Support Familial"
+  };
+  
+  $("segment-analysis").innerHTML = Object.entries(segments).map(([rel, stats]) => {
+    const avgProba = (stats.totalProba / stats.count).toFixed(1);
+    const expectedConversions = Math.round(stats.count * 0.12);
+    const expectedRevenue = expectedConversions * 3500;
+    
+    return `
+      <div style="background: white; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-weight: 600;">${rel}</div>
+          <div style="color: var(--accent); font-size: 12px;">${segmentActions[rel] || "N/A"}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px;">
+          <div>
+            <div style="color: var(--muted);">Clients</div>
+            <div style="font-weight: 600; color: var(--ink);">${stats.count}</div>
+          </div>
+          <div>
+            <div style="color: var(--muted);">Confiance</div>
+            <div style="font-weight: 600; color: var(--ink);">${avgProba}%</div>
+          </div>
+          <div>
+            <div style="color: var(--muted);">Conv. estim.</div>
+            <div style="font-weight: 600; color: var(--accent);">${expectedConversions}</div>
+          </div>
+          <div>
+            <div style="color: var(--muted);">Revenu estim.</div>
+            <div style="font-weight: 600; color: var(--accent);">${expectedRevenue.toLocaleString('fr-FR')}€</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+  
+  $("history-loading").hidden = true;
+  $("history-content").hidden = false;
+}
+
+$("history-filter").addEventListener("change", loadHistory);
+$("history-refresh").addEventListener("click", loadHistory);
+
+$("history-export").addEventListener("click", async () => {
+  const response = await fetch("{% url 'relationship_history_api' %}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+    body: JSON.stringify({ filter: "all" })
+  });
+  const data = await response.json();
+  
+  let csv = "Date,Type Client,Confiance,Produit,Commission\n";
+  data.history.forEach(h => {
+    const products = {
+      "Husband": "Crédit Immobilier",
+      "Wife": "Assurance Famille",
+      "Own-child": "Formation/Épargne",
+      "Unmarried": "Assurance Solo",
+      "Not-in-family": "Produits Spéc.",
+      "Other-relative": "Support Familial"
+    };
+    const rates = { "Husband": 0.03, "Wife": 0.02, "Own-child": 0.015, "Unmarried": 0.02, "Not-in-family": 0.025, "Other-relative": 0.015 };
+    const commission = Math.round(3500 * (rates[h.relationship] || 0.02));
+    csv += `"${h.date}","${h.relationship}",${h.probability}%,"${products[h.relationship] || "N/A"}",${commission}€\n`;
+  });
+  
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "suivi_ventes.csv";
+  a.click();
+});
+
+$("history-export-pdf").addEventListener("click", async () => {
+  const response = await fetch("{% url 'relationship_pdf_api' %}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+    body: JSON.stringify({ filter: $("history-filter").value })
+  });
+  
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "suivi_ventes.pdf";
+  a.click();
+});
+
 </script>
+
+<style>
+.tabs-nav {
+  display: flex;
+  gap: 16px;
+  margin: 24px 0 16px;
+  border-bottom: 2px solid var(--line);
+  overflow-x: auto;
+}
+
+.tab-link {
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 4px solid transparent;
+  font-size: 14px;
+  transition: all 0.3s;
+  position: relative;
+  bottom: -2px;
+}
+
+.tab-link:hover {
+  color: var(--ink);
+  background: rgba(15, 107, 92, 0.05);
+}
+
+.tab-link.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+</style>
 {% endblock %}

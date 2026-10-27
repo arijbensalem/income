@@ -1,0 +1,50 @@
+{% extends "predictor/base.html" %}
+{% block title %}Login - Relation Familiale{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'home' %}">← Accueil</a>
+
+<div style="max-width: 400px; margin: 60px auto; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <h1 style="text-align: center; margin: 0 0 8px 0; font-size: 22px; color: #0f6b5c;">Relation Familiale</h1>
+  <p style="text-align: center; color: var(--muted); margin: 0 0 30px 0; font-size: 13px;">Login Agents Bancaires</p>
+  
+  <form method="post" novalidate>
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+      <div style="background: #fee; border: 1px solid #f88; color: #c33; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+        {% for error in form.non_field_errors %}
+          <p style="margin: 0;">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <div style="margin-bottom: 16px;">
+      <label for="{{ form.username.id_for_label }}" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">{{ form.username.label }}</label>
+      {% if form.username.errors %}
+        {{ form.username }}
+        <small style="color: #c33; display: block; margin-top: 4px;">{{ form.username.errors.0 }}</small>
+      {% else %}
+        {{ form.username }}
+      {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 24px;">
+      <label for="{{ form.password.id_for_label }}" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">{{ form.password.label }}</label>
+      {% if form.password.errors %}
+        {{ form.password }}
+        <small style="color: #c33; display: block; margin-top: 4px;">{{ form.password.errors.0 }}</small>
+      {% else %}
+        {{ form.password }}
+      {% endif %}
+    </div>
+    
+    <button type="submit" class="btn" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600; margin-bottom: 16px;">Se connecter</button>
+  </form>
+  
+  <hr style="border: none; border-top: 1px solid var(--line); margin: 20px 0;">
+  
+  <p style="text-align: center; color: var(--muted); font-size: 13px; margin: 0;">
+    Pas de compte ? <a href="{% url 'relationship_register' %}" style="color: var(--accent); text-decoration: none; font-weight: 600;">S'inscrire</a>
+  </p>
+</div>
+{% endblock %}
